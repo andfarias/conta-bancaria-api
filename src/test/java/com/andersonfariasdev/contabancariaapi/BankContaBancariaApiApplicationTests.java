@@ -1,10 +1,10 @@
-package com.andersonfariasdev.bankaccountapi;
+package com.andersonfariasdev.contabancariaapi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class BankAccountApiApplicationTests {
+class BankContaBancariaApiApplicationTests {
 
 	@Test
 	void contextLoads() {
