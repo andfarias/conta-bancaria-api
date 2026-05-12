@@ -1,30 +1,29 @@
 package com.andersonfariasdev.contabancariaapi.integration;
 
-import com.andersonfariasdev.contabancariaapi.domain.ContaBancaria;
-import com.andersonfariasdev.contabancariaapi.dto.TransferenciaRequest;
-import com.andersonfariasdev.contabancariaapi.repository.ContaBancariaRepository;
+import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.TransferenciaRequest;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ContaBancariaJpaEntity;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaContaBancariaRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse.BodyHandlers;
-import java.net.URI;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -38,15 +37,23 @@ public class TransferenciaConcorrenteTest {
     int port;
 
     @Autowired
-    ContaBancariaRepository contaRepo;
+    JpaContaBancariaRepository contaRepo;
 
     @BeforeEach
     void setup() {
-        var c1 = ContaBancaria.builder().numero("A").digitoVerificador("1").documento("111").saldo(new BigDecimal("1000.00")).build();
-        var c2 = ContaBancaria.builder().numero("B").digitoVerificador("1").documento("222").saldo(new BigDecimal("1000.00")).build();
+        var c1 = new ContaBancariaJpaEntity();
+        c1.setNumero("A");
+        c1.setDigitoVerificador("1");
+        c1.setDocumento("111");
+        c1.setSaldo(new BigDecimal("1000.00"));
+        var c2 = new ContaBancariaJpaEntity();
+        c2.setNumero("B");
+        c2.setDigitoVerificador("1");
+        c2.setDocumento("222");
+        c2.setSaldo(new BigDecimal("1000.00"));
         contaRepo.save(c1);
         contaRepo.save(c2);
-    this.client = HttpClient.newHttpClient();
+        this.client = HttpClient.newHttpClient();
     }
 
     @Test
@@ -58,10 +65,7 @@ public class TransferenciaConcorrenteTest {
         for (int i = 0; i < threads; i++) {
             es.submit(() -> {
                 try {
-                    var req = new TransferenciaRequest();
-                    req.setContaOrigem("A");
-                    req.setContaDestino("B");
-                    req.setValor(new BigDecimal("10.00"));
+                    var req = new TransferenciaRequest("A", "B", new BigDecimal("10.00"));
 
                     try {
                         String json = objectMapper.writeValueAsString(req);

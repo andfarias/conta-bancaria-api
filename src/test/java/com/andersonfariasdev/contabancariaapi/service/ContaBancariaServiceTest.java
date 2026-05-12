@@ -1,12 +1,12 @@
 package com.andersonfariasdev.contabancariaapi.service;
 
-import com.andersonfariasdev.contabancariaapi.domain.ContaBancaria;
-import com.andersonfariasdev.contabancariaapi.dto.ValorTransacaoRequest;
-import com.andersonfariasdev.contabancariaapi.port.ContaBancariaPort;
-import com.andersonfariasdev.contabancariaapi.port.TransacaoPort;
+import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.ValorTransacaoRequest;
+import com.andersonfariasdev.contabancariaapi.application.service.ContaBancariaService;
+import com.andersonfariasdev.contabancariaapi.domain.model.ContaBancaria;
+import com.andersonfariasdev.contabancariaapi.domain.repository.ContaBancariaRepository;
+import com.andersonfariasdev.contabancariaapi.domain.repository.TransacaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -20,10 +20,10 @@ import static org.mockito.Mockito.*;
 class ContaBancariaServiceTest {
 
     @Mock
-    private ContaBancariaPort contaRepo;
+    private ContaBancariaRepository contaRepo;
 
     @Mock
-    private TransacaoPort transRepo;
+    private TransacaoRepository transRepo;
 
     private ContaBancariaService service;
 
@@ -36,17 +36,15 @@ class ContaBancariaServiceTest {
 
     @Test
     void depositoSimples() {
-        var conta = ContaBancaria.builder().id(1L).numero("123").digitoVerificador("1").documento("111").saldo(BigDecimal.ZERO).build();
-    when(contaRepo.findByNumeroForUpdate("123")).thenReturn(Optional.of(conta));
-    when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        var conta = new ContaBancaria(1L, new com.andersonfariasdev.contabancariaapi.domain.model.value.NumeroConta("123"), "1", "111", BigDecimal.ZERO);
+        when(contaRepo.findByNumeroForUpdate("123")).thenReturn(Optional.of(conta));
+        when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        var req = new ValorTransacaoRequest();
-        req.setNumeroConta("123");
-        req.setValor(new BigDecimal("100.00"));
+        var req = new ValorTransacaoRequest("123", new BigDecimal("100.00"));
 
-        service.depositar(req);
+        service.depositar(req.numeroConta(), req.valor());
 
         assertEquals(new BigDecimal("100.00"), conta.getSaldo());
-    verify(transRepo, times(1)).save(any());
+        verify(transRepo, times(1)).save(any());
     }
 }
