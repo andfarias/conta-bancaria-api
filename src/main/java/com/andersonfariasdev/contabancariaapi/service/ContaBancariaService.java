@@ -7,8 +7,8 @@ import com.andersonfariasdev.contabancariaapi.dto.ValorTransacaoRequest;
 import com.andersonfariasdev.contabancariaapi.exception.ContaNaoEncontradaException;
 import com.andersonfariasdev.contabancariaapi.exception.SaldoInsuficienteException;
 import com.andersonfariasdev.contabancariaapi.exception.ValidationException;
-import com.andersonfariasdev.contabancariaapi.repository.ContaBancariaRepository;
-import com.andersonfariasdev.contabancariaapi.repository.TransacaoRepository;
+import com.andersonfariasdev.contabancariaapi.port.ContaBancariaPort;
+import com.andersonfariasdev.contabancariaapi.port.TransacaoPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +22,8 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class ContaBancariaService {
 
-    private final ContaBancariaRepository contaBancariaRepository;
-    private final TransacaoRepository transacaoRepository;
+    private final ContaBancariaPort contaBancariaPort;
+    private final TransacaoPort transacaoPort;
 
     @Transactional
     public ContaBancaria criarConta(ContaBancaria contaBancaria) {
@@ -32,18 +32,18 @@ public class ContaBancariaService {
             throw new ValidationException("numero da conta e digito verificador são obrigatórios");
         }
         contaBancaria.setSaldo(BigDecimal.ZERO);
-        return contaBancariaRepository.save(contaBancaria);
+        return contaBancariaPort.save(contaBancaria);
     }
 
     @Transactional
     public void depositar(ValorTransacaoRequest request) {
-        var opt = contaBancariaRepository.findByNumeroForUpdate(request.getNumeroConta());
+        var opt = contaBancariaPort.findByNumeroForUpdate(request.getNumeroConta());
         if (opt.isEmpty()) throw new ContaNaoEncontradaException(request.getNumeroConta());
         var conta = opt.get();
         conta.setSaldo(conta.getSaldo().add(request.getValor()));
-        contaBancariaRepository.save(conta);
+        contaBancariaPort.save(conta);
 
-        transacaoRepository.save(Transacao.builder()
+        transacaoPort.save(Transacao.builder()
                 .contaBancaria(conta)
                 .valor(request.getValor())
                 .tipo("DEPOSITO")
@@ -53,7 +53,7 @@ public class ContaBancariaService {
 
     @Transactional
     public void sacar(ValorTransacaoRequest request) {
-        var opt = contaBancariaRepository.findByNumeroForUpdate(request.getNumeroConta());
+        var opt = contaBancariaPort.findByNumeroForUpdate(request.getNumeroConta());
         if (opt.isEmpty()) throw new ContaNaoEncontradaException(request.getNumeroConta());
         var conta = opt.get();
 
@@ -62,9 +62,9 @@ public class ContaBancariaService {
         }
 
         conta.setSaldo(conta.getSaldo().subtract(request.getValor()));
-        contaBancariaRepository.save(conta);
+        contaBancariaPort.save(conta);
 
-        transacaoRepository.save(Transacao.builder()
+        transacaoPort.save(Transacao.builder()
                 .contaBancaria(conta)
                 .valor(request.getValor())
                 .tipo("SAQUE")
@@ -82,8 +82,8 @@ public class ContaBancariaService {
         var first = a.compareTo(b) <= 0 ? a : b;
         var second = a.compareTo(b) <= 0 ? b : a;
 
-        var firstAccOpt = contaBancariaRepository.findByNumeroForUpdate(first);
-        var secondAccOpt = same ? firstAccOpt : contaBancariaRepository.findByNumeroForUpdate(second);
+        var firstAccOpt = contaBancariaPort.findByNumeroForUpdate(first);
+        var secondAccOpt = same ? firstAccOpt : contaBancariaPort.findByNumeroForUpdate(second);
 
         if (firstAccOpt.isEmpty()) throw new ContaNaoEncontradaException(first);
         if (secondAccOpt.isEmpty()) throw new ContaNaoEncontradaException(second);
@@ -98,10 +98,10 @@ public class ContaBancariaService {
         origem.setSaldo(origem.getSaldo().subtract(request.getValor()));
         destino.setSaldo(destino.getSaldo().add(request.getValor()));
 
-        contaBancariaRepository.save(origem);
-        if (!same) contaBancariaRepository.save(destino);
+        contaBancariaPort.save(origem);
+        if (!same) contaBancariaPort.save(destino);
 
-        transacaoRepository.save(Transacao.builder()
+        transacaoPort.save(Transacao.builder()
                 .contaBancaria(origem)
                 .valor(request.getValor())
                 .tipo("TRANSFERENCIA_SAIDA")
@@ -109,7 +109,7 @@ public class ContaBancariaService {
                 .metadados("para=" + destino.getNumero())
                 .build());
 
-        transacaoRepository.save(Transacao.builder()
+        transacaoPort.save(Transacao.builder()
                 .contaBancaria(destino)
                 .valor(request.getValor())
                 .tipo("TRANSFERENCIA_ENTRADA")
@@ -121,9 +121,9 @@ public class ContaBancariaService {
     @Transactional(readOnly = true)
     public Page<Transacao> extrato(Long contaBancariaId, OffsetDateTime inicio, OffsetDateTime fim, Pageable pageable) {
         if (inicio != null && fim != null) {
-            return transacaoRepository.findByContaBancariaIdAndOcorridoEmBetween(contaBancariaId, inicio, fim, pageable);
+            return transacaoPort.findByContaBancariaIdAndOcorridoEmBetween(contaBancariaId, inicio, fim, pageable);
         }
-        return transacaoRepository.findByContaBancariaId(contaBancariaId, pageable);
+        return transacaoPort.findByContaBancariaId(contaBancariaId, pageable);
     }
 
 }
