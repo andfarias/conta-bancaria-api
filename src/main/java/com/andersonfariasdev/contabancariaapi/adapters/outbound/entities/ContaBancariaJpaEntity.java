@@ -6,6 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
+import org.hibernate.envers.Audited;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -15,6 +16,7 @@ import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
 
 @Entity
 @Table(name = "contas_bancaria")
+@Audited
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter

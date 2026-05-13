@@ -7,6 +7,7 @@ import com.andersonfariasdev.contabancariaapi.domain.repository.ClienteRepositor
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.ValidationException;
 import com.andersonfariasdev.contabancariaapi.infrastructure.mapper.ClienteMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,6 +30,10 @@ public class ClienteService implements ClienteUseCase {
     @Override
     public List<Cliente> listarClientes() {
         return clienteRepository.findAll();
+    }
+
+    public Page<Cliente> search(String nomeRazao, String documento, com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa tipo, org.springframework.data.domain.Pageable pageable) {
+        return clienteRepository.search(nomeRazao, documento, tipo, pageable);
     }
 
     public Cliente criarCliente(ClienteRequest cliente) {

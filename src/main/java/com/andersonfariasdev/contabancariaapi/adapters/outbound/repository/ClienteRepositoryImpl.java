@@ -5,6 +5,7 @@ import com.andersonfariasdev.contabancariaapi.domain.model.Cliente;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ClienteRepository;
 import com.andersonfariasdev.contabancariaapi.infrastructure.mapper.ClienteMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -37,5 +38,11 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     @Override
     public List<Cliente> findAll() {
         return repository.findAll().stream().map(ClienteMapper::toDomain).collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<Cliente> search(String nomeRazao, String documento, com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa tipo, org.springframework.data.domain.Pageable pageable) {
+        var page = repository.search(nomeRazao, documento, tipo, pageable);
+        return page.map(ClienteMapper::toDomain);
     }
 }
