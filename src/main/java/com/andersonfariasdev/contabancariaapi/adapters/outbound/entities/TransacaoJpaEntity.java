@@ -1,5 +1,7 @@
 package com.andersonfariasdev.contabancariaapi.adapters.outbound.entities;
 
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.StatusTransacao;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoTransacao;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,19 +22,24 @@ public class TransacaoJpaEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conta_bancaria_id", nullable = false)
-    private ContaBancariaJpaEntity contaBancaria;
+    @JoinColumn(name = "conta_id")
+    private ContaBancariaJpaEntity conta;
 
     @Column(nullable = false)
     private BigDecimal valor;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String tipo; // DEPOSITO, SAQUE, TRANSFERENCIA_ENTRADA, TRANSFERENCIA_SAIDA
+    private TipoTransacao tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusTransacao status;
 
     @Column(nullable = false)
     private OffsetDateTime ocorridoEm;
 
-    @Column(nullable = true)
+    @Column(columnDefinition = "text")
     private String metadados;
 
 }

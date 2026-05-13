@@ -5,5 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 public record ContaBancariaCriacaoRequest(
         @NotBlank String numero,
         @NotBlank String digitoVerificador,
-        @NotBlank String documento
+        @NotBlank String tipoConta,
+        Long cooperadoId
 ) {}

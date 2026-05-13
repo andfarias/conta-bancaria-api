@@ -11,17 +11,19 @@ public final class TransacaoMapper {
 
     public static Transacao toDomain(TransacaoJpaEntity e) {
         if (e == null) return null;
-        return new Transacao(e.getId(), e.getContaBancaria().getId(), e.getValor(), e.getTipo(), e.getOcorridoEm(), e.getMetadados());
+        Long origemId = e.getConta() != null ? e.getConta().getId() : null;
+        return new Transacao(e.getId(), origemId, e.getValor(), e.getTipo(), e.getStatus(), e.getOcorridoEm());
     }
 
-    public static TransacaoJpaEntity toEntity(Transacao t, ContaBancariaJpaEntity contaEntity) {
+    public static TransacaoJpaEntity toEntity(Transacao t, ContaBancariaJpaEntity contaOrigem) {
         if (t == null) return null;
         TransacaoJpaEntity e = new TransacaoJpaEntity();
         e.setId(t.getId());
-        e.setContaBancaria(contaEntity);
+        e.setConta(contaOrigem);
         e.setValor(t.getValor());
         e.setTipo(t.getTipo());
-        e.setOcorridoEm(t.getOcorridoEm());
+        e.setStatus(t.getStatus());
+        e.setOcorridoEm(t.getDataHora());
         e.setMetadados(t.getMetadados());
         return e;
     }

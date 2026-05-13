@@ -9,8 +9,8 @@ import java.time.OffsetDateTime;
 
 public interface JpaTransacaoRepository extends JpaRepository<TransacaoJpaEntity, Long> {
 
-    Page<TransacaoJpaEntity> findByContaBancariaIdAndOcorridoEmBetween(Long contaBancariaId, OffsetDateTime inicio, OffsetDateTime fim, Pageable pageable);
+    Page<TransacaoJpaEntity> findByConta_IdAndOcorridoEmBetween(Long contaId, OffsetDateTime inicio, OffsetDateTime fim, Pageable pageable);
 
-    Page<TransacaoJpaEntity> findByContaBancariaId(Long contaBancariaId, Pageable pageable);
+    Page<TransacaoJpaEntity> findByConta_Id(Long contaId, Pageable pageable);
 
 }
