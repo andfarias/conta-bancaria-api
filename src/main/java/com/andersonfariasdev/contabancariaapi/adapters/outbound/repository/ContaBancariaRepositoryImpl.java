@@ -28,11 +28,6 @@ public class ContaBancariaRepositoryImpl implements ContaBancariaRepository {
     }
 
     @Override
-    public Optional<ContaBancaria> findByNumeroForUpdate(String numero) {
-        return repository.findByNumeroForUpdate(numero).map(ContaMapper::toDomain);
-    }
-
-    @Override
     public ContaBancaria save(ContaBancaria conta) {
         ContaBancariaJpaEntity e = ContaMapper.toEntity(conta);
         var saved = repository.save(e);

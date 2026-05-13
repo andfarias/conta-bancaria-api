@@ -15,10 +15,15 @@ public class ContaBancaria {
     private final String digitoVerificador;
     private final Cooperado titular;
     private final TipoConta tipo;
+    private final Long version;
     private StatusConta status;
     private BigDecimal saldo;
 
     public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cooperado titular, TipoConta tipo, StatusConta status, BigDecimal saldo) {
+        this(id, numero, digitoVerificador, titular, tipo, status, saldo, null);
+    }
+
+    public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cooperado titular, TipoConta tipo, StatusConta status, BigDecimal saldo, Long version) {
         validaCriacaoConta(numero, digitoVerificador, titular, tipo);
         if (status == null) status = StatusConta.ATIVA;
         this.id = id;
@@ -28,17 +33,11 @@ public class ContaBancaria {
         this.tipo = tipo;
         this.status = status;
         this.saldo = saldo == null ? BigDecimal.ZERO : saldo;
+        this.version = version;
     }
 
     public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cooperado titular, TipoConta tipo) {
-        validaCriacaoConta(numero, digitoVerificador, titular, tipo);
-        this.id = id;
-        this.numero = numero;
-        this.digitoVerificador = digitoVerificador.trim();
-        this.titular = titular;
-        this.tipo = tipo;
-        this.status = StatusConta.ATIVA;
-        this.saldo = BigDecimal.ZERO;
+        this(id, numero, digitoVerificador, titular, tipo, StatusConta.ATIVA, BigDecimal.ZERO, null);
     }
 
     private static void validaCriacaoConta(NumeroConta numero, String digitoVerificador, Cooperado titular, TipoConta tipo) {
@@ -67,6 +66,13 @@ public class ContaBancaria {
 
     public TipoConta getTipo() {
         return tipo;
+    }
+
+    /**
+     * Versão de concorrência otimista (espelha {@code @Version} na persistência). {@code null} em contas novas.
+     */
+    public Long getVersion() {
+        return version;
     }
 
     public StatusConta getStatus() {
@@ -100,7 +106,6 @@ public class ContaBancaria {
 
     public boolean temSaldoSuficiente(BigDecimal valor) {
         if (valor == null || valor.signum() <= 0) return false;
-        // Política de saldo: saldo >= valor (pode ser extendida para cheque especial)
         return this.saldo.compareTo(valor) >= 0;
     }
 

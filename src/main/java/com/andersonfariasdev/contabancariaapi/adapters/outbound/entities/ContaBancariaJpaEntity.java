@@ -48,6 +48,10 @@ public class ContaBancariaJpaEntity {
     @Column(nullable = false)
     private BigDecimal saldo;
 
+    @Version
+    @Column(nullable = false)
+    private Long version = 0L;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt  = OffsetDateTime.now();
