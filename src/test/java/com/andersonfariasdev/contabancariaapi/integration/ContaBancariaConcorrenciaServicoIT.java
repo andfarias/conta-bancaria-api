@@ -86,13 +86,21 @@ class ContaBancariaConcorrenciaServicoIT {
                             } catch (org.springframework.dao.OptimisticLockingFailureException ole) {
                                 attempts++;
                                 // pequeno backoff
-                                try { Thread.sleep(10L * attempts); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                                try {
+                                    Thread.sleep(10L * attempts);
+                                } catch (InterruptedException ignored) {
+                                    Thread.currentThread().interrupt();
+                                }
                             }
                         }
-                        if (!ok) throw new RuntimeException("transfer failed after retries");
+                        if (!ok) {
+                            // count per-operation failure and continue with other transfers
+                            falhas.incrementAndGet();
+                        }
                     }
                 } catch (Exception e) {
-                    falhas.incrementAndGet();
+                    // unexpected thread-level error; log for debugging but do not mix with per-operation failures
+                    e.printStackTrace();
                 } finally {
                     done.countDown();
                 }
@@ -153,7 +161,11 @@ class ContaBancariaConcorrenciaServicoIT {
                                 contaBancariaService.depositar("HV_D", new BigDecimal("5.00"));
                                 ok = true;
                             } catch (org.springframework.dao.OptimisticLockingFailureException ole) {
-                                try { Thread.sleep(10L * (attempt + 1)); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                                try {
+                                    Thread.sleep(10L * (attempt + 1));
+                                } catch (InterruptedException ignored) {
+                                    Thread.currentThread().interrupt();
+                                }
                             }
                         }
                         if (!ok) {
@@ -173,15 +185,15 @@ class ContaBancariaConcorrenciaServicoIT {
         pool.shutdown();
         assertTrue(pool.awaitTermination(120, TimeUnit.SECONDS));
 
-    int total = threads * depositosPorThread;
-    int failuresCount = falhas.get();
-    int successes = total - failuresCount;
+        int total = threads * depositosPorThread;
+        int failuresCount = falhas.get();
+        int successes = total - failuresCount;
 
-    var saldo = new org.springframework.transaction.support.TransactionTemplate(transactionManager).execute(status ->
-        contaRepo.findByNumero("HV_D").orElseThrow().getSaldo()
-    );
+        var saldo = new org.springframework.transaction.support.TransactionTemplate(transactionManager).execute(status ->
+                contaRepo.findByNumero("HV_D").orElseThrow().getSaldo()
+        );
 
-    var esperado = new BigDecimal("0.00").add(new BigDecimal("5.00").multiply(new BigDecimal(successes)));
-    assertEquals(0, saldo.compareTo(esperado));
+        var esperado = new BigDecimal("0.00").add(new BigDecimal("5.00").multiply(new BigDecimal(successes)));
+        assertEquals(0, saldo.compareTo(esperado));
     }
 }

@@ -16,6 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +44,9 @@ class ContaBancariaMovimentacaoConsistenciaIT {
     @MockitoBean
     TransacaoRepository transacaoRepository;
 
+    @Autowired
+    PlatformTransactionManager transactionManager;
+
     @BeforeEach
     void seed() {
         var coop = CooperadoJpaEntity.builder()
@@ -65,7 +70,9 @@ class ContaBancariaMovimentacaoConsistenciaIT {
 
         assertThrows(RuntimeException.class, () -> contaBancariaService.depositar("RBX", new BigDecimal("100.00")));
 
-        var saldo = contaRepo.findByNumero("RBX").orElseThrow().getSaldo();
+        var saldo = new TransactionTemplate(transactionManager).execute(status ->
+                contaRepo.findByNumero("RBX").orElseThrow().getSaldo()
+        );
         assertEquals(0, saldo.compareTo(new BigDecimal("500.00")));
     }
 
@@ -95,7 +102,9 @@ class ContaBancariaMovimentacaoConsistenciaIT {
         assertThrows(RuntimeException.class,
                 () -> contaBancariaService.transferir(new TransferenciaRequest("RBX", "RBY", new BigDecimal("50.00"))));
 
-        assertEquals(0, contaRepo.findByNumero("RBX").orElseThrow().getSaldo().compareTo(new BigDecimal("500.00")));
-        assertEquals(0, contaRepo.findByNumero("RBY").orElseThrow().getSaldo().compareTo(new BigDecimal("100.00")));
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+            assertEquals(0, contaRepo.findByNumero("RBX").orElseThrow().getSaldo().compareTo(new BigDecimal("500.00")));
+            assertEquals(0, contaRepo.findByNumero("RBY").orElseThrow().getSaldo().compareTo(new BigDecimal("100.00")));
+        });
     }
 }

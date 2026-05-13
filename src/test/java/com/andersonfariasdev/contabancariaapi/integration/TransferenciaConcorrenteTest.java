@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -45,7 +46,7 @@ public class TransferenciaConcorrenteTest {
     JpaContaBancariaRepository contaRepo;
 
     @Autowired
-    TransactionTemplate transactionTemplate;
+    PlatformTransactionManager transactionManager;
 
     @Autowired
     com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaCooperadoRepository cooperadoRepo;
@@ -123,7 +124,7 @@ public class TransferenciaConcorrenteTest {
         int failuresCount = failures.get();
         int successes = total - failuresCount;
 
-        transactionTemplate.executeWithoutResult(status -> {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
             var a = contaRepo.findByNumero("A").get();
             var b = contaRepo.findByNumero("B").get();
 
@@ -156,7 +157,11 @@ public class TransferenciaConcorrenteTest {
                             HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
                             if (response.statusCode() == 409) {
                                 // conflito - retry
-                                try { Thread.sleep(10L * (attempt + 1)); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                                try {
+                                    Thread.sleep(10L * (attempt + 1));
+                                } catch (InterruptedException ignored) {
+                                    Thread.currentThread().interrupt();
+                                }
                                 continue;
                             }
                             if (response.statusCode() >= 300) {
@@ -182,7 +187,7 @@ public class TransferenciaConcorrenteTest {
         int total = threads * chamadasPorThread;
         int failuresCount = failures2.get();
         int successes = total - failuresCount;
-        transactionTemplate.executeWithoutResult(status -> {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
             var a = contaRepo.findByNumero("A").get();
             var b = contaRepo.findByNumero("B").get();
 
@@ -226,7 +231,11 @@ public class TransferenciaConcorrenteTest {
                                     .build();
                             HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
                             if (response.statusCode() == 409) {
-                                try { Thread.sleep(10L * (attempt + 1)); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                                try {
+                                    Thread.sleep(10L * (attempt + 1));
+                                } catch (InterruptedException ignored) {
+                                    Thread.currentThread().interrupt();
+                                }
                                 continue;
                             }
                             if (response.statusCode() >= 300) {
@@ -251,7 +260,7 @@ public class TransferenciaConcorrenteTest {
         int total = threads * porThread;
         int failuresCount = failures3.get();
         int successes = total - failuresCount;
-        transactionTemplate.executeWithoutResult(status -> {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
             var saldo = contaRepo.findByNumero("C").get().getSaldo();
 
             assertEquals(0, saldo.compareTo(new BigDecimal("0.00").add(new BigDecimal("2.00").multiply(new BigDecimal(successes)))));
