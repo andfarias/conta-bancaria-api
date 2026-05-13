@@ -1,6 +1,6 @@
 package com.andersonfariasdev.contabancariaapi.domain.model.enums;
 
-public enum CooperadoType {
+public enum TipoPessoa {
     PF,
     PJ
 }

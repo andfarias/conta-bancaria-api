@@ -28,7 +28,7 @@ public class ContaBancariaController {
 
     @PostMapping
     public ResponseEntity<ContaBancaria> criar(@RequestBody @Valid ContaBancariaCriacaoRequest req) {
-        var created = contaBancariaService.criarConta(req.cooperadoId(), req);
+        var created = contaBancariaService.criarConta(req.clienteId(), req);
         return ResponseEntity.ok(created);
     }
 

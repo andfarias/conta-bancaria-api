@@ -2,9 +2,10 @@ package com.andersonfariasdev.contabancariaapi.integration;
 
 import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.TransferenciaRequest;
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ContaBancariaJpaEntity;
-import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.CooperadoJpaEntity;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ClienteJpaEntity;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaClienteRepository;
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaContaBancariaRepository;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.CooperadoType;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,22 +50,22 @@ public class TransferenciaConcorrenteTest {
     PlatformTransactionManager transactionManager;
 
     @Autowired
-    com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaCooperadoRepository cooperadoRepo;
+    JpaClienteRepository clienteRepo;
 
     @BeforeEach
     void setup() {
-        var coop1 = CooperadoJpaEntity.builder()
+        var coop1 = ClienteJpaEntity.builder()
                 .nomeRazao("Coop A")
                 .documento("613.443.940-19")
-                .tipo(CooperadoType.PF)
+                .tipo(TipoPessoa.PF)
                 .build();
-        var coop2 = CooperadoJpaEntity.builder()
+        var coop2 = ClienteJpaEntity.builder()
                 .nomeRazao("Coop B")
                 .documento("589.414.860-09")
-                .tipo(CooperadoType.PF)
+                .tipo(TipoPessoa.PF)
                 .build();
-        cooperadoRepo.save(coop1);
-        cooperadoRepo.save(coop2);
+        clienteRepo.save(coop1);
+        clienteRepo.save(coop2);
 
         var c1 = new ContaBancariaJpaEntity();
         c1.setNumero("A");
@@ -198,12 +199,12 @@ public class TransferenciaConcorrenteTest {
 
     @Test
     void depositosHttpConcorrentesNaMesmaConta() throws InterruptedException {
-        var c3 = CooperadoJpaEntity.builder()
+        var c3 = ClienteJpaEntity.builder()
                 .nomeRazao("Coop C")
                 .documento("11.222.333/0001-81")
-                .tipo(CooperadoType.PJ)
+                .tipo(TipoPessoa.PJ)
                 .build();
-        cooperadoRepo.save(c3);
+        clienteRepo.save(c3);
         var cDep = new ContaBancariaJpaEntity();
         cDep.setNumero("C");
         cDep.setDigitoVerificador("1");

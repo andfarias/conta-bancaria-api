@@ -10,6 +10,7 @@ import com.andersonfariasdev.contabancariaapi.domain.model.enums.StatusTransacao
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoTransacao;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.NumeroConta;
+import com.andersonfariasdev.contabancariaapi.domain.repository.ClienteRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ContaBancariaRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.TransacaoRepository;
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.ContaNaoEncontradaException;
@@ -36,7 +37,7 @@ public class ContaBancariaService implements ContaBancariaUseCase {
 
     private final ContaBancariaRepository contaBancariaRepository;
     private final TransacaoRepository transacaoRepository;
-    private final com.andersonfariasdev.contabancariaapi.domain.repository.CooperadoRepository cooperadoRepository;
+    private final ClienteRepository clienteRepository;
 
     @Transactional
     public ContaBancaria criarConta(ContaBancaria contaBancaria) {
@@ -47,11 +48,11 @@ public class ContaBancariaService implements ContaBancariaUseCase {
         return contaBancariaRepository.save(contaBancaria);
     }
 
-    // new helper: create account by cooperado id and request
+    // new helper: create account by cliente id and request
     @Transactional
-    public ContaBancaria criarConta(Long cooperadoId, ContaBancariaCriacaoRequest req) {
-        var coopOpt = cooperadoRepository.findById(cooperadoId);
-        var coop = coopOpt.orElseThrow(() -> new ValidationException("Cooperado não encontrado"));
+    public ContaBancaria criarConta(Long clienteId, ContaBancariaCriacaoRequest req) {
+        var coopOpt = clienteRepository.findById(clienteId);
+        var coop = coopOpt.orElseThrow(() -> new ValidationException("Cliente não encontrado"));
 
         var tipoConta = Arrays.stream(TipoConta.values())
                 .filter(t -> t.name().equalsIgnoreCase(req.tipoConta()))

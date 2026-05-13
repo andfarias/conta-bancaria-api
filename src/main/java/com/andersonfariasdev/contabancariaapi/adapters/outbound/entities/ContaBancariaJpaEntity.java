@@ -35,7 +35,7 @@ public class ContaBancariaJpaEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "titular_id", nullable = true)
-    private CooperadoJpaEntity titular;
+    private ClienteJpaEntity titular;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
