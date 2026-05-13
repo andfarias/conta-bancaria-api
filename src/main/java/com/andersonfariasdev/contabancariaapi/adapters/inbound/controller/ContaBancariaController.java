@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.ExtratoResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class ContaBancariaController {
 
     @PostMapping
     public ResponseEntity<ContaBancaria> criar(@RequestBody @Valid ContaBancariaCriacaoRequest req) {
-        var created = contaBancariaService.criarConta(req.cooperadoId(), req);
+        var created = contaBancariaService.criarConta(req.clienteId(), req);
         return ResponseEntity.ok(created);
     }
 
@@ -51,7 +52,7 @@ public class ContaBancariaController {
     }
 
     @GetMapping("/{contaId}/extrato")
-    public ResponseEntity<Page<Transacao>> extrato(@PathVariable("contaId") Long contaId,
+    public ResponseEntity<ExtratoResponse> extrato(@PathVariable("contaId") Long contaId,
                                                    @RequestParam(required = false) String inicio,
                                                    @RequestParam(required = false) String fim,
                                                    @RequestParam(defaultValue = "0") int page,

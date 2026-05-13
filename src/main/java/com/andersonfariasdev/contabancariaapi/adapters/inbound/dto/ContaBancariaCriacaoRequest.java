@@ -6,5 +6,5 @@ public record ContaBancariaCriacaoRequest(
         @NotBlank String numero,
         @NotBlank String digitoVerificador,
         @NotBlank String tipoConta,
-        Long cooperadoId
+        Long clienteId
 ) {}

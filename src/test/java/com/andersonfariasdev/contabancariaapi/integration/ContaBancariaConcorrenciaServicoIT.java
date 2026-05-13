@@ -2,11 +2,11 @@ package com.andersonfariasdev.contabancariaapi.integration;
 
 import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.TransferenciaRequest;
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ContaBancariaJpaEntity;
-import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.CooperadoJpaEntity;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ClienteJpaEntity;
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaContaBancariaRepository;
-import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaCooperadoRepository;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaClienteRepository;
 import com.andersonfariasdev.contabancariaapi.application.service.ContaBancariaService;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.CooperadoType;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,16 +39,16 @@ class ContaBancariaConcorrenciaServicoIT {
     JpaContaBancariaRepository contaRepo;
 
     @Autowired
-    JpaCooperadoRepository cooperadoRepo;
+    JpaClienteRepository clienteRepo;
     @Autowired
     org.springframework.transaction.PlatformTransactionManager transactionManager;
 
     @BeforeEach
     void seed() {
-        var c1 = CooperadoJpaEntity.builder().nomeRazao("C1").documento("613.443.940-19").tipo(CooperadoType.PF).build();
-        var c2 = CooperadoJpaEntity.builder().nomeRazao("C2").documento("589.414.860-09").tipo(CooperadoType.PF).build();
-        cooperadoRepo.save(c1);
-        cooperadoRepo.save(c2);
+        var c1 = ClienteJpaEntity.builder().nomeRazao("C1").documento("613.443.940-19").tipo(TipoPessoa.PF).build();
+        var c2 = ClienteJpaEntity.builder().nomeRazao("C2").documento("589.414.860-09").tipo(TipoPessoa.PF).build();
+        clienteRepo.save(c1);
+        clienteRepo.save(c2);
 
         var a = new ContaBancariaJpaEntity();
         a.setNumero("HV_A");
@@ -134,7 +134,7 @@ class ContaBancariaConcorrenciaServicoIT {
 
     @Test
     void muitosDepositosConcorrentesNaMesmaConta() throws InterruptedException {
-        var coop = cooperadoRepo.findByDocumento("613.443.940-19").orElseThrow();
+        var coop = clienteRepo.findByDocumento("613.443.940-19").orElseThrow();
         var conta = new ContaBancariaJpaEntity();
         conta.setNumero("HV_D");
         conta.setDigitoVerificador("1");

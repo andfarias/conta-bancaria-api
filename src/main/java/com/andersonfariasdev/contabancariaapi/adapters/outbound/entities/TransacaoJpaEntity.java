@@ -5,11 +5,18 @@ import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoTransacao;
 import jakarta.persistence.*;
 import lombok.*;
 
+import org.hibernate.envers.Audited;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "transacoes")
+@Audited
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -41,5 +48,13 @@ public class TransacaoJpaEntity {
 
     @Column(columnDefinition = "text")
     private String metadados;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private OffsetDateTime createdAt = OffsetDateTime.now();
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
 
 }

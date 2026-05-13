@@ -1,9 +1,8 @@
 package com.andersonfariasdev.contabancariaapi.domain;
 
 import com.andersonfariasdev.contabancariaapi.domain.model.ContaBancaria;
-import com.andersonfariasdev.contabancariaapi.domain.model.Cooperado;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.CooperadoType;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.StatusConta;
+import com.andersonfariasdev.contabancariaapi.domain.model.Cliente;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.Documento;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.NumeroConta;
@@ -18,11 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ContaBancariaTest {
 
-    private Cooperado titular;
+    private Cliente titular;
 
     @BeforeEach
     void setup() {
-        titular = new Cooperado(1L, "Titular", new Documento("613.443.940-19"), CooperadoType.PF);
+        titular = new Cliente(1L, "Titular", new Documento("613.443.940-19"), TipoPessoa.PF);
     }
 
     @Test

@@ -13,17 +13,17 @@ public class ContaBancaria {
     private final Long id;
     private final NumeroConta numero;
     private final String digitoVerificador;
-    private final Cooperado titular;
+    private final Cliente titular;
     private final TipoConta tipo;
     private final Long version;
     private StatusConta status;
     private BigDecimal saldo;
 
-    public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cooperado titular, TipoConta tipo, StatusConta status, BigDecimal saldo) {
+    public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cliente titular, TipoConta tipo, StatusConta status, BigDecimal saldo) {
         this(id, numero, digitoVerificador, titular, tipo, status, saldo, null);
     }
 
-    public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cooperado titular, TipoConta tipo, StatusConta status, BigDecimal saldo, Long version) {
+    public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cliente titular, TipoConta tipo, StatusConta status, BigDecimal saldo, Long version) {
         validaCriacaoConta(numero, digitoVerificador, titular, tipo);
         if (status == null) status = StatusConta.ATIVA;
         this.id = id;
@@ -36,15 +36,15 @@ public class ContaBancaria {
         this.version = version;
     }
 
-    public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cooperado titular, TipoConta tipo) {
+    public ContaBancaria(Long id, NumeroConta numero, String digitoVerificador, Cliente titular, TipoConta tipo) {
         this(id, numero, digitoVerificador, titular, tipo, StatusConta.ATIVA, BigDecimal.ZERO, null);
     }
 
-    private static void validaCriacaoConta(NumeroConta numero, String digitoVerificador, Cooperado titular, TipoConta tipo) {
+    private static void validaCriacaoConta(NumeroConta numero, String digitoVerificador, Cliente titular, TipoConta tipo) {
         if (numero == null) throw new ValidationException("numero é obrigatório");
         if (digitoVerificador == null || digitoVerificador.trim().isEmpty())
             throw new ValidationException("digito verificador é obrigatório");
-        if (titular == null) throw new ValidationException("titular (Cooperado) é obrigatório");
+        if (titular == null) throw new ValidationException("titular (Cliente) é obrigatório");
         if (tipo == null) throw new ValidationException("tipo de conta é obrigatório");
     }
 
@@ -60,7 +60,7 @@ public class ContaBancaria {
         return digitoVerificador;
     }
 
-    public Cooperado getTitular() {
+    public Cliente getTitular() {
         return titular;
     }
 

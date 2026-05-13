@@ -6,21 +6,23 @@ import lombok.*;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import org.hibernate.envers.Audited;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.CooperadoType;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 
 @Entity
-@Table(name = "cooperados")
+@Table(name = "clientes")
+@Audited
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CooperadoJpaEntity {
+public class ClienteJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,7 +36,7 @@ public class CooperadoJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CooperadoType tipo;
+    private TipoPessoa tipo;
 
     @OneToMany(mappedBy = "titular", fetch = FetchType.LAZY)
     private List<ContaBancariaJpaEntity> contas;

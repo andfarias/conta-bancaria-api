@@ -2,12 +2,12 @@ package com.andersonfariasdev.contabancariaapi.integration;
 
 import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.TransferenciaRequest;
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ContaBancariaJpaEntity;
-import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.CooperadoJpaEntity;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ClienteJpaEntity;
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaContaBancariaRepository;
-import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaCooperadoRepository;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaClienteRepository;
 import com.andersonfariasdev.contabancariaapi.application.service.ContaBancariaService;
 import com.andersonfariasdev.contabancariaapi.domain.model.Transacao;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.CooperadoType;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import com.andersonfariasdev.contabancariaapi.domain.repository.TransacaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ class ContaBancariaMovimentacaoConsistenciaIT {
     JpaContaBancariaRepository contaRepo;
 
     @Autowired
-    JpaCooperadoRepository cooperadoRepo;
+    JpaClienteRepository clienteRepo;
 
     @MockitoBean
     TransacaoRepository transacaoRepository;
@@ -49,12 +49,12 @@ class ContaBancariaMovimentacaoConsistenciaIT {
 
     @BeforeEach
     void seed() {
-        var coop = CooperadoJpaEntity.builder()
+        var coop = ClienteJpaEntity.builder()
                 .nomeRazao("Titular Rollback")
                 .documento("613.443.940-19")
-                .tipo(CooperadoType.PF)
+                .tipo(TipoPessoa.PF)
                 .build();
-        cooperadoRepo.save(coop);
+        clienteRepo.save(coop);
 
         var conta = new ContaBancariaJpaEntity();
         conta.setNumero("RBX");
@@ -78,12 +78,12 @@ class ContaBancariaMovimentacaoConsistenciaIT {
 
     @Test
     void transferenciaFazRollbackSeSegundaTransacaoFalhar() {
-        var coop2 = CooperadoJpaEntity.builder()
+        var coop2 = ClienteJpaEntity.builder()
                 .nomeRazao("B")
                 .documento("589.414.860-09")
-                .tipo(CooperadoType.PF)
+                .tipo(TipoPessoa.PF)
                 .build();
-        cooperadoRepo.save(coop2);
+        clienteRepo.save(coop2);
         var contaB = new ContaBancariaJpaEntity();
         contaB.setNumero("RBY");
         contaB.setDigitoVerificador("1");

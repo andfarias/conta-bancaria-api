@@ -14,4 +14,5 @@ public interface ContaBancariaRepository {
 
     ContaBancaria save(ContaBancaria conta);
 
+    Optional<ContaBancaria> findById(Long contaBancariaId);
 }
