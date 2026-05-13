@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -67,7 +68,7 @@ public class ContaBancariaService implements ContaBancariaUseCase {
 
     @Transactional
     public void depositar(String numeroConta, BigDecimal valor) {
-        var opt = contaBancariaRepository.findByNumeroForUpdate(numeroConta);
+        var opt = contaBancariaRepository.findByNumero(numeroConta);
         if (opt.isEmpty()) throw new ContaNaoEncontradaException(numeroConta);
         var conta = opt.get();
         // creditar apenas o valor da transação
@@ -79,7 +80,7 @@ public class ContaBancariaService implements ContaBancariaUseCase {
 
     @Transactional
     public void sacar(String numeroConta, BigDecimal valor) {
-        var opt = contaBancariaRepository.findByNumeroForUpdate(numeroConta);
+        var opt = contaBancariaRepository.findByNumero(numeroConta);
         if (opt.isEmpty()) throw new ContaNaoEncontradaException(numeroConta);
         var conta = opt.get();
 
@@ -109,8 +110,8 @@ public class ContaBancariaService implements ContaBancariaUseCase {
         var first = a.compareTo(b) <= 0 ? a : b;
         var second = a.compareTo(b) <= 0 ? b : a;
 
-        var firstAccOpt = contaBancariaRepository.findByNumeroForUpdate(first);
-        var secondAccOpt = same ? firstAccOpt : contaBancariaRepository.findByNumeroForUpdate(second);
+        var firstAccOpt = contaBancariaRepository.findByNumero(first);
+        var secondAccOpt = same ? firstAccOpt : contaBancariaRepository.findByNumero(second);
 
         if (firstAccOpt.isEmpty()) throw new ContaNaoEncontradaException(first);
         if (secondAccOpt.isEmpty()) throw new ContaNaoEncontradaException(second);

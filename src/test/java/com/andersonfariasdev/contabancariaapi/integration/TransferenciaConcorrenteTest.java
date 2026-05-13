@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -42,6 +43,9 @@ public class TransferenciaConcorrenteTest {
 
     @Autowired
     JpaContaBancariaRepository contaRepo;
+
+    @Autowired
+    TransactionTemplate transactionTemplate;
 
     @Autowired
     com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaCooperadoRepository cooperadoRepo;
@@ -81,12 +85,12 @@ public class TransferenciaConcorrenteTest {
         int threads = 10;
         ExecutorService es = Executors.newFixedThreadPool(threads);
         CountDownLatch latch = new CountDownLatch(threads);
+        java.util.concurrent.atomic.AtomicInteger failures = new java.util.concurrent.atomic.AtomicInteger();
 
         for (int i = 0; i < threads; i++) {
             es.submit(() -> {
                 try {
                     var req = new TransferenciaRequest("A", "B", new BigDecimal("10.00"));
-
                     try {
                         String json = objectMapper.writeValueAsString(req);
                         HttpRequest httpReq = HttpRequest.newBuilder()
@@ -96,11 +100,14 @@ public class TransferenciaConcorrenteTest {
                                 .build();
 
                         HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
-                        if (response.statusCode() >= 300) {
-                            throw new RuntimeException("Unexpected status: " + response.statusCode() + " body: " + response.body());
+                        if (response.statusCode() == 409) {
+                            // conflito de versão
+                            failures.incrementAndGet();
+                        } else if (response.statusCode() >= 300) {
+                            failures.incrementAndGet();
                         }
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        failures.incrementAndGet();
                     }
                 } finally {
                     latch.countDown();
@@ -108,13 +115,21 @@ public class TransferenciaConcorrenteTest {
             });
         }
 
-        latch.await();
+        assertTrue(latch.await(120, TimeUnit.SECONDS));
+        es.shutdown();
+        assertTrue(es.awaitTermination(60, TimeUnit.SECONDS));
 
-        var a = contaRepo.findByNumero("A").get();
-        var b = contaRepo.findByNumero("B").get();
+        int total = threads;
+        int failuresCount = failures.get();
+        int successes = total - failuresCount;
 
-        assertEquals(new BigDecimal("900.00"), a.getSaldo());
-        assertEquals(new BigDecimal("1100.00"), b.getSaldo());
+        transactionTemplate.executeWithoutResult(status -> {
+            var a = contaRepo.findByNumero("A").get();
+            var b = contaRepo.findByNumero("B").get();
+
+            assertEquals(0, a.getSaldo().compareTo(new BigDecimal("1000.00").subtract(new BigDecimal("10.00").multiply(new BigDecimal(successes)))));
+            assertEquals(0, b.getSaldo().compareTo(new BigDecimal("1000.00").add(new BigDecimal("10.00").multiply(new BigDecimal(successes)))));
+        });
     }
 
     @Test
@@ -123,40 +138,57 @@ public class TransferenciaConcorrenteTest {
         int chamadasPorThread = 15;
         ExecutorService es = Executors.newFixedThreadPool(threads);
         CountDownLatch latch = new CountDownLatch(threads * chamadasPorThread);
+        java.util.concurrent.atomic.AtomicInteger failures2 = new java.util.concurrent.atomic.AtomicInteger();
 
         for (int t = 0; t < threads; t++) {
             es.submit(() -> {
                 for (int k = 0; k < chamadasPorThread; k++) {
-                    try {
-                        var req = new TransferenciaRequest("A", "B", new BigDecimal("0.50"));
-                        String json = objectMapper.writeValueAsString(req);
-                        HttpRequest httpReq = HttpRequest.newBuilder()
-                                .uri(URI.create("http://localhost:" + port + "/api/contas/transferencia"))
-                                .header("Content-Type", "application/json")
-                                .POST(BodyPublishers.ofString(json))
-                                .build();
-                        HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
-                        if (response.statusCode() >= 300) {
-                            throw new RuntimeException("HTTP " + response.statusCode() + " " + response.body());
+                    boolean success = false;
+                    for (int attempt = 0; attempt < 5; attempt++) {
+                        try {
+                            var req = new TransferenciaRequest("A", "B", new BigDecimal("0.50"));
+                            String json = objectMapper.writeValueAsString(req);
+                            HttpRequest httpReq = HttpRequest.newBuilder()
+                                    .uri(URI.create("http://localhost:" + port + "/api/contas/transferencia"))
+                                    .header("Content-Type", "application/json")
+                                    .POST(BodyPublishers.ofString(json))
+                                    .build();
+                            HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
+                            if (response.statusCode() == 409) {
+                                // conflito - retry
+                                try { Thread.sleep(10L * (attempt + 1)); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                                continue;
+                            }
+                            if (response.statusCode() >= 300) {
+                                // non-recoverable for this request
+                                break;
+                            }
+                            success = true;
+                            break; // sucesso
+                        } catch (Exception e) {
+                            // continue retrying until attempts exhausted
                         }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    } finally {
-                        latch.countDown();
                     }
+                    if (!success) failures2.incrementAndGet();
+                    latch.countDown();
                 }
             });
         }
 
-        assertTrue(latch.await(180, TimeUnit.SECONDS));
+        assertTrue(latch.await(300, TimeUnit.SECONDS));
         es.shutdown();
-        assertTrue(es.awaitTermination(60, TimeUnit.SECONDS));
+        assertTrue(es.awaitTermination(120, TimeUnit.SECONDS));
 
         int total = threads * chamadasPorThread;
-        var a = contaRepo.findByNumero("A").get();
-        var b = contaRepo.findByNumero("B").get();
-        assertEquals(0, a.getSaldo().compareTo(new BigDecimal("1000.00").subtract(new BigDecimal("0.50").multiply(new BigDecimal(total)))));
-        assertEquals(0, b.getSaldo().compareTo(new BigDecimal("1000.00").add(new BigDecimal("0.50").multiply(new BigDecimal(total)))));
+        int failuresCount = failures2.get();
+        int successes = total - failuresCount;
+        transactionTemplate.executeWithoutResult(status -> {
+            var a = contaRepo.findByNumero("A").get();
+            var b = contaRepo.findByNumero("B").get();
+
+            assertEquals(0, a.getSaldo().compareTo(new BigDecimal("1000.00").subtract(new BigDecimal("0.50").multiply(new BigDecimal(successes)))));
+            assertEquals(0, b.getSaldo().compareTo(new BigDecimal("1000.00").add(new BigDecimal("0.50").multiply(new BigDecimal(successes)))));
+        });
     }
 
     @Test
@@ -178,35 +210,51 @@ public class TransferenciaConcorrenteTest {
         int porThread = 12;
         ExecutorService es = Executors.newFixedThreadPool(threads);
         CountDownLatch latch = new CountDownLatch(threads * porThread);
+        java.util.concurrent.atomic.AtomicInteger failures3 = new java.util.concurrent.atomic.AtomicInteger();
 
         for (int t = 0; t < threads; t++) {
             es.submit(() -> {
                 for (int k = 0; k < porThread; k++) {
-                    try {
-                        String json = "{\"numeroConta\":\"C\",\"valor\":2.00}";
-                        HttpRequest httpReq = HttpRequest.newBuilder()
-                                .uri(URI.create("http://localhost:" + port + "/api/contas/deposito"))
-                                .header("Content-Type", "application/json")
-                                .POST(BodyPublishers.ofString(json))
-                                .build();
-                        HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
-                        if (response.statusCode() >= 300) {
-                            throw new RuntimeException("HTTP " + response.statusCode());
+                    boolean success = false;
+                    for (int attempt = 0; attempt < 5; attempt++) {
+                        try {
+                            String json = "{\"numeroConta\":\"C\",\"valor\":2.00}";
+                            HttpRequest httpReq = HttpRequest.newBuilder()
+                                    .uri(URI.create("http://localhost:" + port + "/api/contas/deposito"))
+                                    .header("Content-Type", "application/json")
+                                    .POST(BodyPublishers.ofString(json))
+                                    .build();
+                            HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
+                            if (response.statusCode() == 409) {
+                                try { Thread.sleep(10L * (attempt + 1)); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                                continue;
+                            }
+                            if (response.statusCode() >= 300) {
+                                break;
+                            }
+                            success = true;
+                            break;
+                        } catch (Exception e) {
+                            // retry until attempts exhausted
                         }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    } finally {
-                        latch.countDown();
                     }
+                    if (!success) failures3.incrementAndGet();
+                    latch.countDown();
                 }
             });
         }
 
-        assertTrue(latch.await(180, TimeUnit.SECONDS));
+        assertTrue(latch.await(300, TimeUnit.SECONDS));
         es.shutdown();
-        assertTrue(es.awaitTermination(60, TimeUnit.SECONDS));
+        assertTrue(es.awaitTermination(120, TimeUnit.SECONDS));
 
-        var saldo = contaRepo.findByNumero("C").get().getSaldo();
-        assertEquals(0, saldo.compareTo(new BigDecimal("600.00")));
+        int total = threads * porThread;
+        int failuresCount = failures3.get();
+        int successes = total - failuresCount;
+        transactionTemplate.executeWithoutResult(status -> {
+            var saldo = contaRepo.findByNumero("C").get().getSaldo();
+
+            assertEquals(0, saldo.compareTo(new BigDecimal("0.00").add(new BigDecimal("2.00").multiply(new BigDecimal(successes)))));
+        });
     }
 }

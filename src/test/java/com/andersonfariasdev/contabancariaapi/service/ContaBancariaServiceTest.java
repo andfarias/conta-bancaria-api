@@ -54,7 +54,7 @@ class ContaBancariaServiceTest {
     @Test
     void depositoSimples() {
         var conta = contaAtiva("123", new BigDecimal("0.00"));
-        when(contaRepo.findByNumeroForUpdate("123")).thenReturn(Optional.of(conta));
+        when(contaRepo.findByNumero("123")).thenReturn(Optional.of(conta));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         service.depositar("123", new BigDecimal("100.00"));
@@ -65,7 +65,7 @@ class ContaBancariaServiceTest {
 
     @Test
     void depositoContaInexistenteLancaContaNaoEncontrada() {
-        when(contaRepo.findByNumeroForUpdate("404")).thenReturn(Optional.empty());
+        when(contaRepo.findByNumero("404")).thenReturn(Optional.empty());
         assertThrows(ContaNaoEncontradaException.class, () -> service.depositar("404", BigDecimal.ONE));
         verify(transRepo, never()).save(any());
     }
@@ -73,7 +73,7 @@ class ContaBancariaServiceTest {
     @Test
     void saqueSaldoInsuficiente() {
         var conta = contaAtiva("9", new BigDecimal("5.00"));
-        when(contaRepo.findByNumeroForUpdate("9")).thenReturn(Optional.of(conta));
+        when(contaRepo.findByNumero("9")).thenReturn(Optional.of(conta));
         assertThrows(SaldoInsuficienteException.class, () -> service.sacar("9", new BigDecimal("10.00")));
         verify(contaRepo, never()).save(any());
         verify(transRepo, never()).save(any());
@@ -82,7 +82,7 @@ class ContaBancariaServiceTest {
     @Test
     void saqueSucesso() {
         var conta = contaAtiva("9", new BigDecimal("50.00"));
-        when(contaRepo.findByNumeroForUpdate("9")).thenReturn(Optional.of(conta));
+        when(contaRepo.findByNumero("9")).thenReturn(Optional.of(conta));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         service.sacar("9", new BigDecimal("20.00"));
@@ -95,8 +95,8 @@ class ContaBancariaServiceTest {
     void transferenciaOrigemSemSaldo() {
         var a = contaAtiva("A", new BigDecimal("5.00"));
         var b = contaAtiva("B", new BigDecimal("0.00"));
-        when(contaRepo.findByNumeroForUpdate("A")).thenReturn(Optional.of(a));
-        when(contaRepo.findByNumeroForUpdate("B")).thenReturn(Optional.of(b));
+        when(contaRepo.findByNumero("A")).thenReturn(Optional.of(a));
+        when(contaRepo.findByNumero("B")).thenReturn(Optional.of(b));
 
         var req = new TransferenciaRequest("A", "B", new BigDecimal("10.00"));
         assertThrows(SaldoInsuficienteException.class, () -> service.transferir(req));
@@ -106,8 +106,8 @@ class ContaBancariaServiceTest {
     @Test
     void transferenciaContaDestinoInexistente() {
         var a = contaAtiva("A", new BigDecimal("100.00"));
-        when(contaRepo.findByNumeroForUpdate("A")).thenReturn(Optional.of(a));
-        when(contaRepo.findByNumeroForUpdate("Z")).thenReturn(Optional.empty());
+        when(contaRepo.findByNumero("A")).thenReturn(Optional.of(a));
+        when(contaRepo.findByNumero("Z")).thenReturn(Optional.empty());
 
         var req = new TransferenciaRequest("A", "Z", BigDecimal.ONE);
         assertThrows(ContaNaoEncontradaException.class, () -> service.transferir(req));
@@ -117,8 +117,8 @@ class ContaBancariaServiceTest {
     void transferenciaAtualizaSaldos() {
         var a = contaAtiva("A", new BigDecimal("100.00"));
         var b = contaAtiva("B", new BigDecimal("50.00"));
-        when(contaRepo.findByNumeroForUpdate("A")).thenReturn(Optional.of(a));
-        when(contaRepo.findByNumeroForUpdate("B")).thenReturn(Optional.of(b));
+        when(contaRepo.findByNumero("A")).thenReturn(Optional.of(a));
+        when(contaRepo.findByNumero("B")).thenReturn(Optional.of(b));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         service.transferir(new TransferenciaRequest("A", "B", new BigDecimal("25.00")));
@@ -131,7 +131,7 @@ class ContaBancariaServiceTest {
     @Test
     void transferenciaMesmaContaNaoAlteraSaldoLiquido() {
         var a = contaAtiva("A", new BigDecimal("200.00"));
-        when(contaRepo.findByNumeroForUpdate("A")).thenReturn(Optional.of(a));
+        when(contaRepo.findByNumero("A")).thenReturn(Optional.of(a));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         service.transferir(new TransferenciaRequest("A", "A", new BigDecimal("40.00")));

@@ -2,10 +2,6 @@ package com.andersonfariasdev.contabancariaapi.infrastructure.mapper;
 
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ContaBancariaJpaEntity;
 import com.andersonfariasdev.contabancariaapi.domain.model.ContaBancaria;
-import com.andersonfariasdev.contabancariaapi.domain.model.Cooperado;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.CooperadoType;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoDocumento;
-import com.andersonfariasdev.contabancariaapi.domain.model.value.Documento;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.NumeroConta;
 import com.andersonfariasdev.contabancariaapi.infrastructure.mapper.CooperadoMapper;
 
@@ -27,7 +23,8 @@ public final class ContaMapper {
                 titularDomain,
                 e.getTipo(),
                 e.getStatus(),
-                e.getSaldo()
+                e.getSaldo(),
+                e.getVersion()
         );
     }
 
@@ -41,6 +38,7 @@ public final class ContaMapper {
         e.setTipo(c.getTipo());
         e.setStatus(c.getStatus());
         e.setSaldo(c.getSaldo());
+        e.setVersion(c.getVersion());
         return e;
     }
 }
