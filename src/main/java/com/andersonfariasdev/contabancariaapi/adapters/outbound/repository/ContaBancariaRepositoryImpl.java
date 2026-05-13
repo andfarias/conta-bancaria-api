@@ -6,7 +6,6 @@ import com.andersonfariasdev.contabancariaapi.domain.model.ContaBancaria;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ContaBancariaRepository;
 import com.andersonfariasdev.contabancariaapi.infrastructure.mapper.ContaMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -32,5 +31,11 @@ public class ContaBancariaRepositoryImpl implements ContaBancariaRepository {
         ContaBancariaJpaEntity e = ContaMapper.toEntity(conta);
         var saved = repository.save(e);
         return ContaMapper.toDomain(saved);
+    }
+
+    @Override
+    public Optional<ContaBancaria> findById(Long contaBancariaId) {
+        return repository.findById(contaBancariaId)
+                .flatMap(e -> Optional.ofNullable(ContaMapper.toDomain(e)));
     }
 }

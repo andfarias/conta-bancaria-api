@@ -1,6 +1,7 @@
 package com.andersonfariasdev.contabancariaapi.application.service;
 
 import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.ContaBancariaCriacaoRequest;
+import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.ExtratoResponse;
 import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.TransferenciaRequest;
 import com.andersonfariasdev.contabancariaapi.application.usecases.ContaBancariaUseCase;
 import com.andersonfariasdev.contabancariaapi.domain.model.ContaBancaria;
@@ -23,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -144,11 +144,19 @@ public class ContaBancariaService implements ContaBancariaUseCase {
     }
 
     @Transactional(readOnly = true)
-    public Page<Transacao> extrato(Long contaBancariaId, OffsetDateTime inicio, OffsetDateTime fim, Pageable pageable) {
+    public ExtratoResponse extrato(Long contaBancariaId, OffsetDateTime inicio, OffsetDateTime fim, Pageable pageable) {
+        Page<Transacao> page;
         if (inicio != null && fim != null) {
-            return transacaoRepository.findByContaBancariaIdAndOcorridoEmBetween(contaBancariaId, inicio, fim, pageable);
+            page = transacaoRepository.findByContaBancariaIdAndOcorridoEmBetween(contaBancariaId, inicio, fim, pageable);
+        } else {
+            page = transacaoRepository.findByContaBancariaId(contaBancariaId, pageable);
         }
-        return transacaoRepository.findByContaBancariaId(contaBancariaId, pageable);
+
+        var contaOpt = contaBancariaRepository.findById(contaBancariaId);
+        if (contaOpt.isEmpty()) throw new ContaNaoEncontradaException(String.valueOf(contaBancariaId));
+        var conta = contaOpt.get();
+
+        return new ExtratoResponse(page, conta.getSaldo());
     }
 
 }

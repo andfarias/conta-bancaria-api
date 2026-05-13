@@ -3,14 +3,14 @@ package com.andersonfariasdev.contabancariaapi.service;
 import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.ContaBancariaCriacaoRequest;
 import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.TransferenciaRequest;
 import com.andersonfariasdev.contabancariaapi.application.service.ContaBancariaService;
+import com.andersonfariasdev.contabancariaapi.domain.model.Cliente;
 import com.andersonfariasdev.contabancariaapi.domain.model.ContaBancaria;
-import com.andersonfariasdev.contabancariaapi.domain.model.Cooperado;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.CooperadoType;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.Documento;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.NumeroConta;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ContaBancariaRepository;
-import com.andersonfariasdev.contabancariaapi.domain.repository.CooperadoRepository;
+import com.andersonfariasdev.contabancariaapi.domain.repository.ClienteRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.TransacaoRepository;
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.ContaNaoEncontradaException;
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.SaldoInsuficienteException;
@@ -41,14 +41,14 @@ class ContaBancariaServiceTest {
     private TransacaoRepository transRepo;
 
     @Mock
-    private CooperadoRepository cooperadoRepo;
+    private ClienteRepository clienteRepo;
 
     private ContaBancariaService service;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        service = new ContaBancariaService(contaRepo, transRepo, cooperadoRepo);
+        service = new ContaBancariaService(contaRepo, transRepo, clienteRepo);
     }
 
     @Test
@@ -141,25 +141,25 @@ class ContaBancariaServiceTest {
     }
 
     @Test
-    void criarContaPorCooperadoIdCooperadoInexistente() {
-        when(cooperadoRepo.findById(99L)).thenReturn(Optional.empty());
+    void criarContaPorClienteIdClienteInexistente() {
+        when(clienteRepo.findById(99L)).thenReturn(Optional.empty());
         var req = new ContaBancariaCriacaoRequest("1", "0", "CORRENTE", 99L);
         assertThrows(ValidationException.class, () -> service.criarConta(99L, req));
         verify(contaRepo, never()).save(any());
     }
 
     @Test
-    void criarContaPorCooperadoIdTipoInvalido() {
-        var coop = new Cooperado(1L, "X", new Documento("613.443.940-19"), CooperadoType.PF);
-        when(cooperadoRepo.findById(1L)).thenReturn(Optional.of(coop));
+    void criarContaPorClienteIdTipoInvalido() {
+        var coop = new Cliente(1L, "X", new Documento("613.443.940-19"), TipoPessoa.PF);
+        when(clienteRepo.findById(1L)).thenReturn(Optional.of(coop));
         var req = new ContaBancariaCriacaoRequest("99", "1", "INVESTIMENTO", 1L);
         assertThrows(ValidationException.class, () -> service.criarConta(1L, req));
     }
 
     @Test
-    void criarContaPorCooperadoIdNumeroJaExiste() {
-        var coop = new Cooperado(1L, "X", new Documento("613.443.940-19"), CooperadoType.PF);
-        when(cooperadoRepo.findById(1L)).thenReturn(Optional.of(coop));
+    void criarContaPorClienteIdNumeroJaExiste() {
+        var coop = new Cliente(1L, "X", new Documento("613.443.940-19"), TipoPessoa.PF);
+        when(clienteRepo.findById(1L)).thenReturn(Optional.of(coop));
         when(contaRepo.findByNumero("dup")).thenReturn(Optional.of(contaAtiva("dup", BigDecimal.ZERO)));
 
         var req = new ContaBancariaCriacaoRequest("dup", "1", "poupanca", 1L);
@@ -168,9 +168,9 @@ class ContaBancariaServiceTest {
     }
 
     @Test
-    void criarContaPorCooperadoIdSucesso() {
-        var coop = new Cooperado(1L, "X", new Documento("613.443.940-19"), CooperadoType.PF);
-        when(cooperadoRepo.findById(1L)).thenReturn(Optional.of(coop));
+    void criarContaPorClienteIdSucesso() {
+        var coop = new Cliente(1L, "X", new Documento("613.443.940-19"), TipoPessoa.PF);
+        when(clienteRepo.findById(1L)).thenReturn(Optional.of(coop));
         when(contaRepo.findByNumero("777")).thenReturn(Optional.empty());
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -191,7 +191,7 @@ class ContaBancariaServiceTest {
     }
 
     private static ContaBancaria contaAtiva(String numero, BigDecimal saldo) {
-        var titular = new Cooperado(1L, "T", new Documento("613.443.940-19"), CooperadoType.PF);
+        var titular = new Cliente(1L, "T", new Documento("613.443.940-19"), TipoPessoa.PF);
         return new ContaBancaria(1L, new NumeroConta(numero), "1", titular, TipoConta.CORRENTE, null, saldo);
     }
 }
