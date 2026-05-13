@@ -24,8 +24,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -113,5 +115,98 @@ public class TransferenciaConcorrenteTest {
 
         assertEquals(new BigDecimal("900.00"), a.getSaldo());
         assertEquals(new BigDecimal("1100.00"), b.getSaldo());
+    }
+
+    @Test
+    void transferenciasHttpAltoVolume() throws InterruptedException {
+        int threads = 40;
+        int chamadasPorThread = 15;
+        ExecutorService es = Executors.newFixedThreadPool(threads);
+        CountDownLatch latch = new CountDownLatch(threads * chamadasPorThread);
+
+        for (int t = 0; t < threads; t++) {
+            es.submit(() -> {
+                for (int k = 0; k < chamadasPorThread; k++) {
+                    try {
+                        var req = new TransferenciaRequest("A", "B", new BigDecimal("0.50"));
+                        String json = objectMapper.writeValueAsString(req);
+                        HttpRequest httpReq = HttpRequest.newBuilder()
+                                .uri(URI.create("http://localhost:" + port + "/api/contas/transferencia"))
+                                .header("Content-Type", "application/json")
+                                .POST(BodyPublishers.ofString(json))
+                                .build();
+                        HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
+                        if (response.statusCode() >= 300) {
+                            throw new RuntimeException("HTTP " + response.statusCode() + " " + response.body());
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+
+        assertTrue(latch.await(180, TimeUnit.SECONDS));
+        es.shutdown();
+        assertTrue(es.awaitTermination(60, TimeUnit.SECONDS));
+
+        int total = threads * chamadasPorThread;
+        var a = contaRepo.findByNumero("A").get();
+        var b = contaRepo.findByNumero("B").get();
+        assertEquals(0, a.getSaldo().compareTo(new BigDecimal("1000.00").subtract(new BigDecimal("0.50").multiply(new BigDecimal(total)))));
+        assertEquals(0, b.getSaldo().compareTo(new BigDecimal("1000.00").add(new BigDecimal("0.50").multiply(new BigDecimal(total)))));
+    }
+
+    @Test
+    void depositosHttpConcorrentesNaMesmaConta() throws InterruptedException {
+        var c3 = CooperadoJpaEntity.builder()
+                .nomeRazao("Coop C")
+                .documento("11.222.333/0001-81")
+                .tipo(CooperadoType.PJ)
+                .build();
+        cooperadoRepo.save(c3);
+        var cDep = new ContaBancariaJpaEntity();
+        cDep.setNumero("C");
+        cDep.setDigitoVerificador("1");
+        cDep.setSaldo(BigDecimal.ZERO);
+        cDep.setTitular(c3);
+        contaRepo.save(cDep);
+
+        int threads = 25;
+        int porThread = 12;
+        ExecutorService es = Executors.newFixedThreadPool(threads);
+        CountDownLatch latch = new CountDownLatch(threads * porThread);
+
+        for (int t = 0; t < threads; t++) {
+            es.submit(() -> {
+                for (int k = 0; k < porThread; k++) {
+                    try {
+                        String json = "{\"numeroConta\":\"C\",\"valor\":2.00}";
+                        HttpRequest httpReq = HttpRequest.newBuilder()
+                                .uri(URI.create("http://localhost:" + port + "/api/contas/deposito"))
+                                .header("Content-Type", "application/json")
+                                .POST(BodyPublishers.ofString(json))
+                                .build();
+                        HttpResponse<String> response = client.send(httpReq, BodyHandlers.ofString());
+                        if (response.statusCode() >= 300) {
+                            throw new RuntimeException("HTTP " + response.statusCode());
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+
+        assertTrue(latch.await(180, TimeUnit.SECONDS));
+        es.shutdown();
+        assertTrue(es.awaitTermination(60, TimeUnit.SECONDS));
+
+        var saldo = contaRepo.findByNumero("C").get().getSaldo();
+        assertEquals(0, saldo.compareTo(new BigDecimal("600.00")));
     }
 }
