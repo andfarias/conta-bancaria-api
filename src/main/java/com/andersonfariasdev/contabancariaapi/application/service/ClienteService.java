@@ -6,6 +6,7 @@ import com.andersonfariasdev.contabancariaapi.domain.model.Cliente;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ClienteRepository;
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.ValidationException;
 import com.andersonfariasdev.contabancariaapi.infrastructure.mapper.ClienteMapper;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class ClienteService implements ClienteUseCase {
         return clienteRepository.search(nomeRazao, documento, tipo, pageable);
     }
 
+    @RateLimiter(name = "criacaoCliente")
     public Cliente criarCliente(ClienteRequest cliente) {
         return criarCliente(ClienteMapper.fromDtoToDomain(cliente));
     }

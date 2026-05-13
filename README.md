@@ -78,4 +78,8 @@ sequenceDiagram
 ### TODO
 
 - Avaliar sharding de contas para escalar gravações intensivas.
-- Adição de Resilience4j
+- Controle de Vazão e Anti-Fraude (Rate Limiting)
+    - Aplicar Rate Limiting por recurso crítico (ex.: endpoint de transações) usando Resilience4j para demo e Bucket4j/Redis para produção distribuída.
+    - Definir políticas por chave: por endereço IP, por documento (CPF/CNPJ) e por conta autenticada.
+    - Implementar idempotency keys para operações mutáveis (transações) e evitar duplicações em retries.
+
