@@ -2,7 +2,9 @@ package com.andersonfariasdev.contabancariaapi.integration;
 
 import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.TransferenciaRequest;
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ContaBancariaJpaEntity;
+import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.CooperadoJpaEntity;
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaContaBancariaRepository;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.CooperadoType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,18 +41,34 @@ public class TransferenciaConcorrenteTest {
     @Autowired
     JpaContaBancariaRepository contaRepo;
 
+    @Autowired
+    com.andersonfariasdev.contabancariaapi.adapters.outbound.repository.jpa.JpaCooperadoRepository cooperadoRepo;
+
     @BeforeEach
     void setup() {
+        var coop1 = CooperadoJpaEntity.builder()
+                .nomeRazao("Coop A")
+                .documento("613.443.940-19")
+                .tipo(CooperadoType.PF)
+                .build();
+        var coop2 = CooperadoJpaEntity.builder()
+                .nomeRazao("Coop B")
+                .documento("589.414.860-09")
+                .tipo(CooperadoType.PF)
+                .build();
+        cooperadoRepo.save(coop1);
+        cooperadoRepo.save(coop2);
+
         var c1 = new ContaBancariaJpaEntity();
         c1.setNumero("A");
         c1.setDigitoVerificador("1");
-        c1.setDocumento("111");
         c1.setSaldo(new BigDecimal("1000.00"));
+        c1.setTitular(coop1);
         var c2 = new ContaBancariaJpaEntity();
         c2.setNumero("B");
         c2.setDigitoVerificador("1");
-        c2.setDocumento("222");
         c2.setSaldo(new BigDecimal("1000.00"));
+        c2.setTitular(coop2);
         contaRepo.save(c1);
         contaRepo.save(c2);
         this.client = HttpClient.newHttpClient();
