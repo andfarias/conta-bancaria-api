@@ -25,4 +25,16 @@ class ClienteMapperTest {
                 "Empresa", "11.222.333/0001-81", "pj"));
         assertEquals(TipoPessoa.PJ, pj.getTipo());
     }
+
+    @Test
+    void fromDtoDocumentoCpfNaoPodeSerTipoPj() {
+        var req = new ClienteRequest("X", "613.443.940-19", "PJ");
+        assertThrows(ValidationException.class, () -> ClienteMapper.fromDtoToDomain(req));
+    }
+
+    @Test
+    void fromDtoDocumentoCnpjNaoPodeSerTipoPf() {
+        var req = new ClienteRequest("Y", "11.222.333/0001-81", "PF");
+        assertThrows(ValidationException.class, () -> ClienteMapper.fromDtoToDomain(req));
+    }
 }

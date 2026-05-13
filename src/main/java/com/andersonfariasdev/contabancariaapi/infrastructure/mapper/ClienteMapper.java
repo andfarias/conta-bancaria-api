@@ -4,6 +4,7 @@ import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.ClienteReques
 import com.andersonfariasdev.contabancariaapi.adapters.outbound.entities.ClienteJpaEntity;
 import com.andersonfariasdev.contabancariaapi.domain.model.Cliente;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoDocumento;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.Documento;
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.ValidationException;
 
@@ -43,6 +44,15 @@ public final class ClienteMapper {
                 .filter(c -> c.name().equalsIgnoreCase(clienteRequest.tipo()))
                 .findFirst()
                 .orElseThrow(() -> new ValidationException("Tipo de cliente deve ser PF ou PJ"));
+
+        if (doc != null) {
+            if (doc.getTipo() == TipoDocumento.CPF && clienteType != TipoPessoa.PF) {
+                throw new ValidationException("Documento tipo CPF só pode ser associado a tipo PF");
+            }
+            if (doc.getTipo() == TipoDocumento.CNPJ && clienteType != TipoPessoa.PJ) {
+                throw new ValidationException("Documento tipo CNPJ só pode ser associado a tipo PJ");
+            }
+        }
 
         return new Cliente(null, clienteRequest.nomeRazao(), doc, clienteType);
     }
