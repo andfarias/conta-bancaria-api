@@ -81,7 +81,7 @@ class ContaBancariaConcorrenciaServicoIT {
                         boolean ok = false;
                         while (!ok && attempts < 5) {
                             try {
-                                contaBancariaService.transferir(req);
+                                contaBancariaService.transferir(req.contaOrigem(), req.contaDestino(), req.valor());
                                 ok = true;
                             } catch (org.springframework.dao.OptimisticLockingFailureException ole) {
                                 attempts++;

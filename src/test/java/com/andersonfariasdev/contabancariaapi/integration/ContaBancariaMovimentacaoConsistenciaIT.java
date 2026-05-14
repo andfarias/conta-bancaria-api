@@ -100,7 +100,7 @@ class ContaBancariaMovimentacaoConsistenciaIT {
         }).when(transacaoRepository).save(any(Transacao.class));
 
         var req = new TransferenciaRequest("000001", "000002", new BigDecimal("50.00"));
-        assertThrows(RuntimeException.class, () -> contaBancariaService.transferir(req));
+        assertThrows(RuntimeException.class, () -> contaBancariaService.transferir(req.contaOrigem(), req.contaDestino(), req.valor()));
 
         var saldoA = new TransactionTemplate(transactionManager).execute(status ->
                 contaRepo.findByNumero("000001").orElseThrow().getSaldo()

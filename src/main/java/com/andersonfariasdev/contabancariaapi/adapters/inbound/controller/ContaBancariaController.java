@@ -47,7 +47,7 @@ public class ContaBancariaController {
 
     @PostMapping("/transferencia")
     public ResponseEntity<?> transferir(@RequestBody @Valid TransferenciaRequest req) {
-        contaBancariaService.transferir(req);
+        contaBancariaService.transferir(req.contaOrigem(), req.contaDestino(), req.valor());
         return ResponseEntity.ok().build();
     }
 

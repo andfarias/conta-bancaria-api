@@ -96,17 +96,14 @@ public class ContaBancariaService implements ContaBancariaUseCase {
     }
 
     @Override
-    public void transferir(String contaOrigem, String contaDestino, BigDecimal valor) {
-
-    }
-
     @Transactional
-    public void transferir(TransferenciaRequest request) {
-        log.info("Iniciando transferência: {} -> {} valor={}", request.contaOrigem(), request.contaDestino(), request.valor());
+    public void transferir(String contaOrigem, String contaDestino, BigDecimal valor) {
+        log.info("Iniciando transferência: {} -> {} valor={}", contaOrigem, contaDestino, valor);
         // Para evitar deadlocks, travar contas em ordem consistente por número
-        String a = request.contaOrigem();
-        String b = request.contaDestino();
+        String a = contaOrigem;
+        String b = contaDestino;
         boolean same = a.equals(b);
+        // TODO: Uma conta deveria poder transferir para si mesma?
 
         var first = a.compareTo(b) <= 0 ? a : b;
         var second = a.compareTo(b) <= 0 ? b : a;
@@ -122,13 +119,13 @@ public class ContaBancariaService implements ContaBancariaUseCase {
 
         log.debug("Saldos antes: origem={} destino={}", origem.getSaldo(), destino.getSaldo());
 
-        if (origem.getSaldo().compareTo(request.valor()) < 0) {
+        if (origem.getSaldo().compareTo(valor) < 0) {
             throw new SaldoInsuficienteException("Saldo insuficiente para transferência");
         }
 
         // debitar/creditar apenas o valor da transferência
-        origem.debitar(request.valor());
-        destino.creditar(request.valor());
+        origem.debitar(valor);
+        destino.creditar(valor);
 
         var savedOrigem = contaBancariaRepository.save(origem);
         if (!same) {
@@ -138,9 +135,10 @@ public class ContaBancariaService implements ContaBancariaUseCase {
             log.debug("Saldo salvo (mesma conta): {}", savedOrigem.getSaldo());
         }
 
-        transacaoRepository.save(new Transacao(null, origem.getId(), request.valor(), TipoTransacao.TRANSFERENCIA_SAIDA, StatusTransacao.CONCLUIDA, OffsetDateTime.now(), "para=" + destino.getNumero()));
+        transacaoRepository.save(new Transacao(null, origem.getId(), valor, TipoTransacao.TRANSFERENCIA_SAIDA, StatusTransacao.CONCLUIDA, OffsetDateTime.now(), "para=" + destino.getNumero()));
 
-        transacaoRepository.save(new Transacao(null, destino.getId(), request.valor(), TipoTransacao.TRANSFERENCIA_ENTRADA, StatusTransacao.CONCLUIDA, OffsetDateTime.now(), "de=" + origem.getNumero()));
+        transacaoRepository.save(new Transacao(null, destino.getId(), valor, TipoTransacao.TRANSFERENCIA_ENTRADA, StatusTransacao.CONCLUIDA, OffsetDateTime.now(), "de=" + origem.getNumero()));
+
     }
 
     @Transactional(readOnly = true)

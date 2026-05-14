@@ -5,12 +5,12 @@ import com.andersonfariasdev.contabancariaapi.adapters.inbound.dto.Transferencia
 import com.andersonfariasdev.contabancariaapi.application.service.ContaBancariaService;
 import com.andersonfariasdev.contabancariaapi.domain.model.Cliente;
 import com.andersonfariasdev.contabancariaapi.domain.model.ContaBancaria;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.Documento;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.IdentificadorConta;
-import com.andersonfariasdev.contabancariaapi.domain.repository.ContaBancariaRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ClienteRepository;
+import com.andersonfariasdev.contabancariaapi.domain.repository.ContaBancariaRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.TransacaoRepository;
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.ContaNaoEncontradaException;
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.SaldoInsuficienteException;
@@ -26,11 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class ContaBancariaServiceTest {
 
@@ -99,7 +95,7 @@ class ContaBancariaServiceTest {
         when(contaRepo.findByNumero("000002")).thenReturn(Optional.of(b));
 
         var req = new TransferenciaRequest("000001", "000002", new BigDecimal("10.00"));
-        assertThrows(SaldoInsuficienteException.class, () -> service.transferir(req));
+        assertThrows(SaldoInsuficienteException.class, () -> service.transferir(req.contaOrigem(), req.contaDestino(), req.valor()));
         verify(contaRepo, never()).save(any());
     }
 
@@ -110,7 +106,7 @@ class ContaBancariaServiceTest {
         when(contaRepo.findByNumero("000000")).thenReturn(Optional.empty());
 
         var req = new TransferenciaRequest("000001", "000000", BigDecimal.ONE);
-        assertThrows(ContaNaoEncontradaException.class, () -> service.transferir(req));
+        assertThrows(ContaNaoEncontradaException.class, () -> service.transferir(req.contaOrigem(), req.contaDestino(), req.valor()));
     }
 
     @Test
@@ -121,7 +117,7 @@ class ContaBancariaServiceTest {
         when(contaRepo.findByNumero("000002")).thenReturn(Optional.of(b));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        service.transferir(new TransferenciaRequest("000001", "000002", new BigDecimal("25.00")));
+        service.transferir("000001", "000002", new BigDecimal("25.00"));
 
         assertEquals(new BigDecimal("75.00"), a.getSaldo());
         assertEquals(new BigDecimal("75.00"), b.getSaldo());
@@ -134,7 +130,7 @@ class ContaBancariaServiceTest {
         when(contaRepo.findByNumero("000001")).thenReturn(Optional.of(a));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        service.transferir(new TransferenciaRequest("000001", "000001", new BigDecimal("40.00")));
+        service.transferir("000001", "000001", new BigDecimal("40.00"));
 
         assertEquals(new BigDecimal("200.00"), a.getSaldo());
         verify(transRepo, times(2)).save(any());
