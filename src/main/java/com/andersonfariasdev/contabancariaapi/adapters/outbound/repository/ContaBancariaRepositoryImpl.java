@@ -17,11 +17,6 @@ public class ContaBancariaRepositoryImpl implements ContaBancariaRepository {
     private final JpaContaBancariaRepository repository;
 
     @Override
-    public Optional<ContaBancaria> findByNumeroAndDigitoVerificador(String numero, String digitoVerificador) {
-        return repository.findByNumeroAndDigitoVerificador(numero, digitoVerificador).map(ContaMapper::toDomain);
-    }
-
-    @Override
     public Optional<ContaBancaria> findByNumero(String numero) {
         return repository.findByNumero(numero).map(ContaMapper::toDomain);
     }

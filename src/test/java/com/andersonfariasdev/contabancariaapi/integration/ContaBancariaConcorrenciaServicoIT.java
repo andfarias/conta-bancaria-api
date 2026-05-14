@@ -51,12 +51,12 @@ class ContaBancariaConcorrenciaServicoIT {
         clienteRepo.save(c2);
 
         var a = new ContaBancariaJpaEntity();
-        a.setNumero("HV_A");
+        a.setNumero("000001");
         a.setDigitoVerificador("1");
         a.setSaldo(new BigDecimal("5000.00"));
         a.setTitular(c1);
         var b = new ContaBancariaJpaEntity();
-        b.setNumero("HV_B");
+        b.setNumero("000002");
         b.setDigitoVerificador("1");
         b.setSaldo(new BigDecimal("1000.00"));
         b.setTitular(c2);
@@ -66,7 +66,7 @@ class ContaBancariaConcorrenciaServicoIT {
 
     @Test
     void muitasTransferenciasConcorrentesViaServicoMantemConsistenciaDeSaldo() throws InterruptedException {
-        var req = new TransferenciaRequest("HV_A", "HV_B", new BigDecimal("1.00"));
+        var req = new TransferenciaRequest("000001", "000002", new BigDecimal("1.00"));
         ExecutorService pool = Executors.newFixedThreadPool(THREADS);
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(THREADS);
@@ -120,8 +120,8 @@ class ContaBancariaConcorrenciaServicoIT {
         assertTrue(failures >= 0 && failures <= totalOps);
 
         var balances = new org.springframework.transaction.support.TransactionTemplate(transactionManager).execute(status -> {
-            var sA = contaRepo.findByNumero("HV_A").orElseThrow().getSaldo();
-            var sB = contaRepo.findByNumero("HV_B").orElseThrow().getSaldo();
+            var sA = contaRepo.findByNumero("000001").orElseThrow().getSaldo();
+            var sB = contaRepo.findByNumero("000002").orElseThrow().getSaldo();
             return new java.math.BigDecimal[]{sA, sB};
         });
         var saldoA = balances[0];
@@ -136,7 +136,7 @@ class ContaBancariaConcorrenciaServicoIT {
     void muitosDepositosConcorrentesNaMesmaConta() throws InterruptedException {
         var coop = clienteRepo.findByDocumento("613.443.940-19").orElseThrow();
         var conta = new ContaBancariaJpaEntity();
-        conta.setNumero("HV_D");
+        conta.setNumero("000003");
         conta.setDigitoVerificador("1");
         conta.setSaldo(BigDecimal.ZERO);
         conta.setTitular(coop);
@@ -158,7 +158,7 @@ class ContaBancariaConcorrenciaServicoIT {
                         boolean ok = false;
                         for (int attempt = 0; attempt < 5 && !ok; attempt++) {
                             try {
-                                contaBancariaService.depositar("HV_D", new BigDecimal("5.00"));
+                                contaBancariaService.depositar("000003", new BigDecimal("5.00"));
                                 ok = true;
                             } catch (org.springframework.dao.OptimisticLockingFailureException ole) {
                                 try {
@@ -190,7 +190,7 @@ class ContaBancariaConcorrenciaServicoIT {
         int successes = total - failuresCount;
 
         var saldo = new org.springframework.transaction.support.TransactionTemplate(transactionManager).execute(status ->
-                contaRepo.findByNumero("HV_D").orElseThrow().getSaldo()
+                contaRepo.findByNumero("000003").orElseThrow().getSaldo()
         );
 
         var esperado = new BigDecimal("0.00").add(new BigDecimal("5.00").multiply(new BigDecimal(successes)));

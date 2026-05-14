@@ -1,21 +1,21 @@
 package com.andersonfariasdev.contabancariaapi.adapters.outbound.entities;
 
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.StatusConta;
+import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-
 import org.hibernate.envers.Audited;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.StatusConta;
-import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "contas_bancaria")
+@Table(name = "contas_bancaria", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"numero", "digitoVerificador"})
+})
 @Audited
 @EntityListeners(AuditingEntityListener.class)
 @Getter
@@ -29,7 +29,11 @@ public class ContaBancariaJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
+    @Builder.Default
+    private String agencia = "0001"; // Agência default
+
+    @Column(nullable = false)
     private String numero;
 
     @Column(nullable = false)
@@ -56,7 +60,7 @@ public class ContaBancariaJpaEntity {
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private OffsetDateTime createdAt  = OffsetDateTime.now();
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
     @LastModifiedDate
     @Column(nullable = false)

@@ -10,7 +10,7 @@ import com.andersonfariasdev.contabancariaapi.domain.model.enums.StatusConta;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.StatusTransacao;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoTransacao;
-import com.andersonfariasdev.contabancariaapi.domain.model.value.NumeroConta;
+import com.andersonfariasdev.contabancariaapi.domain.model.value.IdentificadorConta;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ClienteRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ContaBancariaRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.TransacaoRepository;
@@ -41,14 +41,13 @@ public class ContaBancariaService implements ContaBancariaUseCase {
 
     @Transactional
     public ContaBancaria criarConta(ContaBancaria contaBancaria) {
-        // validações simples para número, dígito e documento
-        if (contaBancaria.getNumero() == null || contaBancaria.getDigitoVerificador() == null) {
-            throw new ValidationException("numero da conta e digito verificador são obrigatórios");
+        // validações simples para o identificador
+        if (contaBancaria.getIdentificador() == null) {
+            throw new ValidationException("identificador da conta é obrigatório");
         }
         return contaBancariaRepository.save(contaBancaria);
     }
 
-    // new helper: create account by cliente id and request
     @Transactional
     public ContaBancaria criarConta(Long clienteId, ContaBancariaCriacaoRequest req) {
         var coopOpt = clienteRepository.findById(clienteId);
@@ -63,7 +62,8 @@ public class ContaBancariaService implements ContaBancariaUseCase {
             throw new ValidationException("Já existe conta com este número");
         }
 
-        var acc = new ContaBancaria(null, new NumeroConta(req.numero()), req.digitoVerificador(), coop, tipoConta, StatusConta.ATIVA, null);
+        var identificador = new IdentificadorConta(req.numero(), req.digitoVerificador());
+        var acc = new ContaBancaria(null, identificador, coop, tipoConta, StatusConta.ATIVA, null);
         return criarConta(acc);
     }
 

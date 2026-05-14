@@ -77,9 +77,12 @@ sequenceDiagram
 
 ### TODO
 
-- Avaliar sharding de contas para escalar gravações intensivas.
-- Controle de Vazão e Anti-Fraude (Rate Limiting)
-    - Aplicar Rate Limiting por recurso crítico (ex.: endpoint de transações) usando Resilience4j para demo e Bucket4j/Redis para produção distribuída.
-    - Definir políticas por chave: por endereço IP, por documento (CPF/CNPJ) e por conta autenticada.
-    - Implementar idempotency keys para operações mutáveis (transações) e evitar duplicações em retries.
-
+- [ ] Avaliar sharding de contas para escalar gravações intensivas.
+- [ ] Controle de Vazão e Anti-Fraude (Rate Limiting)
+    - [ ] Aplicar Rate Limiting por recurso crítico (ex.: endpoint de transações) usando Resilience4j para demo e Bucket4j/Redis para produção distribuída.
+    - [ ] Definir políticas por chave: por endereço IP, por documento (CPF/CNPJ) e por conta autenticada.
+    - [ ] Implementar idempotency keys para operações mutáveis (transações) e evitar duplicações em retries.
+- [ ] CQRS para separar leitura e escrita, otimizando consultas de extrato e histórico sem impactar a performance de gravação.
+- [ ] Aplicar HATEOAS nas APIs
+- [ ] Implementar validação real de dígito verificador via Módulo 10 ou 11 (padrão bancário brasileiro)
+- [ ] Tratar os responses para não enviar dados sensíveis

@@ -28,13 +28,13 @@ class ContaBancariaControllerTest {
 
     @Test
     void saqueSaldoInsuficienteRetorna422() throws Exception {
-        var req = new ValorTransacaoRequest("999", new BigDecimal("1000.00"));
+        var req = new ValorTransacaoRequest("000999", new BigDecimal("1000.00"));
 
         doThrow(new SaldoInsuficienteException("Saldo insuficiente")).when(service).sacar(req.numeroConta(), req.valor());
 
         mvc.perform(post("/api/contas/saque")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"numeroConta\":\"999\",\"valor\":1000.00}"))
+                        .content("{\"numeroConta\":\"000999\",\"valor\":1000.00}"))
                 .andExpect(status().isUnprocessableEntity());
     }
 }

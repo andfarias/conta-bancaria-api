@@ -8,7 +8,7 @@ import com.andersonfariasdev.contabancariaapi.domain.model.ContaBancaria;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.Documento;
-import com.andersonfariasdev.contabancariaapi.domain.model.value.NumeroConta;
+import com.andersonfariasdev.contabancariaapi.domain.model.value.IdentificadorConta;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ContaBancariaRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.ClienteRepository;
 import com.andersonfariasdev.contabancariaapi.domain.repository.TransacaoRepository;
@@ -53,11 +53,11 @@ class ContaBancariaServiceTest {
 
     @Test
     void depositoSimples() {
-        var conta = contaAtiva("123", new BigDecimal("0.00"));
-        when(contaRepo.findByNumero("123")).thenReturn(Optional.of(conta));
+        var conta = contaAtiva("000123", new BigDecimal("0.00"));
+        when(contaRepo.findByNumero("000123")).thenReturn(Optional.of(conta));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        service.depositar("123", new BigDecimal("100.00"));
+        service.depositar("000123", new BigDecimal("100.00"));
 
         assertEquals(new BigDecimal("100.00"), conta.getSaldo());
         verify(transRepo).save(any());
@@ -72,20 +72,20 @@ class ContaBancariaServiceTest {
 
     @Test
     void saqueSaldoInsuficiente() {
-        var conta = contaAtiva("9", new BigDecimal("5.00"));
-        when(contaRepo.findByNumero("9")).thenReturn(Optional.of(conta));
-        assertThrows(SaldoInsuficienteException.class, () -> service.sacar("9", new BigDecimal("10.00")));
+        var conta = contaAtiva("000009", new BigDecimal("5.00"));
+        when(contaRepo.findByNumero("000009")).thenReturn(Optional.of(conta));
+        assertThrows(SaldoInsuficienteException.class, () -> service.sacar("000009", new BigDecimal("10.00")));
         verify(contaRepo, never()).save(any());
         verify(transRepo, never()).save(any());
     }
 
     @Test
     void saqueSucesso() {
-        var conta = contaAtiva("9", new BigDecimal("50.00"));
-        when(contaRepo.findByNumero("9")).thenReturn(Optional.of(conta));
+        var conta = contaAtiva("000009", new BigDecimal("50.00"));
+        when(contaRepo.findByNumero("000009")).thenReturn(Optional.of(conta));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        service.sacar("9", new BigDecimal("20.00"));
+        service.sacar("000009", new BigDecimal("20.00"));
 
         assertEquals(new BigDecimal("30.00"), conta.getSaldo());
         verify(transRepo).save(any());
@@ -93,35 +93,35 @@ class ContaBancariaServiceTest {
 
     @Test
     void transferenciaOrigemSemSaldo() {
-        var a = contaAtiva("A", new BigDecimal("5.00"));
-        var b = contaAtiva("B", new BigDecimal("0.00"));
-        when(contaRepo.findByNumero("A")).thenReturn(Optional.of(a));
-        when(contaRepo.findByNumero("B")).thenReturn(Optional.of(b));
+        var a = contaAtiva("000001", new BigDecimal("5.00"));
+        var b = contaAtiva("000002", new BigDecimal("0.00"));
+        when(contaRepo.findByNumero("000001")).thenReturn(Optional.of(a));
+        when(contaRepo.findByNumero("000002")).thenReturn(Optional.of(b));
 
-        var req = new TransferenciaRequest("A", "B", new BigDecimal("10.00"));
+        var req = new TransferenciaRequest("000001", "000002", new BigDecimal("10.00"));
         assertThrows(SaldoInsuficienteException.class, () -> service.transferir(req));
         verify(contaRepo, never()).save(any());
     }
 
     @Test
     void transferenciaContaDestinoInexistente() {
-        var a = contaAtiva("A", new BigDecimal("100.00"));
-        when(contaRepo.findByNumero("A")).thenReturn(Optional.of(a));
-        when(contaRepo.findByNumero("Z")).thenReturn(Optional.empty());
+        var a = contaAtiva("000001", new BigDecimal("100.00"));
+        when(contaRepo.findByNumero("000001")).thenReturn(Optional.of(a));
+        when(contaRepo.findByNumero("000000")).thenReturn(Optional.empty());
 
-        var req = new TransferenciaRequest("A", "Z", BigDecimal.ONE);
+        var req = new TransferenciaRequest("000001", "000000", BigDecimal.ONE);
         assertThrows(ContaNaoEncontradaException.class, () -> service.transferir(req));
     }
 
     @Test
     void transferenciaAtualizaSaldos() {
-        var a = contaAtiva("A", new BigDecimal("100.00"));
-        var b = contaAtiva("B", new BigDecimal("50.00"));
-        when(contaRepo.findByNumero("A")).thenReturn(Optional.of(a));
-        when(contaRepo.findByNumero("B")).thenReturn(Optional.of(b));
+        var a = contaAtiva("000001", new BigDecimal("100.00"));
+        var b = contaAtiva("000002", new BigDecimal("50.00"));
+        when(contaRepo.findByNumero("000001")).thenReturn(Optional.of(a));
+        when(contaRepo.findByNumero("000002")).thenReturn(Optional.of(b));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        service.transferir(new TransferenciaRequest("A", "B", new BigDecimal("25.00")));
+        service.transferir(new TransferenciaRequest("000001", "000002", new BigDecimal("25.00")));
 
         assertEquals(new BigDecimal("75.00"), a.getSaldo());
         assertEquals(new BigDecimal("75.00"), b.getSaldo());
@@ -130,11 +130,11 @@ class ContaBancariaServiceTest {
 
     @Test
     void transferenciaMesmaContaNaoAlteraSaldoLiquido() {
-        var a = contaAtiva("A", new BigDecimal("200.00"));
-        when(contaRepo.findByNumero("A")).thenReturn(Optional.of(a));
+        var a = contaAtiva("000001", new BigDecimal("200.00"));
+        when(contaRepo.findByNumero("000001")).thenReturn(Optional.of(a));
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        service.transferir(new TransferenciaRequest("A", "A", new BigDecimal("40.00")));
+        service.transferir(new TransferenciaRequest("000001", "000001", new BigDecimal("40.00")));
 
         assertEquals(new BigDecimal("200.00"), a.getSaldo());
         verify(transRepo, times(2)).save(any());
@@ -143,7 +143,7 @@ class ContaBancariaServiceTest {
     @Test
     void criarContaPorClienteIdClienteInexistente() {
         when(clienteRepo.findById(99L)).thenReturn(Optional.empty());
-        var req = new ContaBancariaCriacaoRequest("1", "0", "CORRENTE", 99L);
+        var req = new ContaBancariaCriacaoRequest("000001", "0", "CORRENTE", 99L);
         assertThrows(ValidationException.class, () -> service.criarConta(99L, req));
         verify(contaRepo, never()).save(any());
     }
@@ -152,7 +152,7 @@ class ContaBancariaServiceTest {
     void criarContaPorClienteIdTipoInvalido() {
         var coop = new Cliente(1L, "X", new Documento("613.443.940-19"), TipoPessoa.PF);
         when(clienteRepo.findById(1L)).thenReturn(Optional.of(coop));
-        var req = new ContaBancariaCriacaoRequest("99", "1", "INVESTIMENTO", 1L);
+        var req = new ContaBancariaCriacaoRequest("000099", "1", "INVESTIMENTO", 1L);
         assertThrows(ValidationException.class, () -> service.criarConta(1L, req));
     }
 
@@ -160,9 +160,9 @@ class ContaBancariaServiceTest {
     void criarContaPorClienteIdNumeroJaExiste() {
         var coop = new Cliente(1L, "X", new Documento("613.443.940-19"), TipoPessoa.PF);
         when(clienteRepo.findById(1L)).thenReturn(Optional.of(coop));
-        when(contaRepo.findByNumero("dup")).thenReturn(Optional.of(contaAtiva("dup", BigDecimal.ZERO)));
+        when(contaRepo.findByNumero("123456")).thenReturn(Optional.of(contaAtiva("123456", BigDecimal.ZERO)));
 
-        var req = new ContaBancariaCriacaoRequest("dup", "1", "poupanca", 1L);
+        var req = new ContaBancariaCriacaoRequest("123456", "1", "poupanca", 1L);
         assertThrows(ValidationException.class, () -> service.criarConta(1L, req));
         verify(contaRepo, never()).save(any());
     }
@@ -171,27 +171,28 @@ class ContaBancariaServiceTest {
     void criarContaPorClienteIdSucesso() {
         var coop = new Cliente(1L, "X", new Documento("613.443.940-19"), TipoPessoa.PF);
         when(clienteRepo.findById(1L)).thenReturn(Optional.of(coop));
-        when(contaRepo.findByNumero("777")).thenReturn(Optional.empty());
+        when(contaRepo.findByNumero("000777")).thenReturn(Optional.empty());
         when(contaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        var criada = service.criarConta(1L, new ContaBancariaCriacaoRequest("777", "2", "POUPANCA", 1L));
+        var criada = service.criarConta(1L, new ContaBancariaCriacaoRequest("000777", "2", "POUPANCA", 1L));
 
         assertEquals(TipoConta.POUPANCA, criada.getTipo());
-        assertEquals("777", criada.getNumero().getValor());
+        assertEquals("000777", criada.getNumero());
         verify(contaRepo).save(any());
     }
 
     @Test
-    void criarContaDominioNumeroNuloLancaValidationException() {
+    void criarContaDominioIdentificadorNuloLancaValidationException() {
         ContaBancaria contaMock = mock(ContaBancaria.class);
-        when(contaMock.getNumero()).thenReturn(null);
-        when(contaMock.getDigitoVerificador()).thenReturn("1");
+        when(contaMock.getIdentificador()).thenReturn(null);
         assertThrows(ValidationException.class, () -> service.criarConta(contaMock));
         verify(contaRepo, never()).save(any());
     }
 
     private static ContaBancaria contaAtiva(String numero, BigDecimal saldo) {
         var titular = new Cliente(1L, "T", new Documento("613.443.940-19"), TipoPessoa.PF);
-        return new ContaBancaria(1L, new NumeroConta(numero), "1", titular, TipoConta.CORRENTE, null, saldo);
+        // Garante que o número tenha 6 dígitos para passar na validação do IdentificadorConta
+        String numeroFormatado = String.format("%06d", Integer.parseInt(numero));
+        return new ContaBancaria(1L, new IdentificadorConta(numeroFormatado, "1"), titular, TipoConta.CORRENTE, null, saldo);
     }
 }

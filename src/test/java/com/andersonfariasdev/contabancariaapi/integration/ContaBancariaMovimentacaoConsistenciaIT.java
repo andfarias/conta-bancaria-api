@@ -57,7 +57,7 @@ class ContaBancariaMovimentacaoConsistenciaIT {
         clienteRepo.save(coop);
 
         var conta = new ContaBancariaJpaEntity();
-        conta.setNumero("RBX");
+        conta.setNumero("000001");
         conta.setDigitoVerificador("1");
         conta.setSaldo(new BigDecimal("500.00"));
         conta.setTitular(coop);
@@ -68,10 +68,10 @@ class ContaBancariaMovimentacaoConsistenciaIT {
     void depositoFazRollbackSePersistenciaDeTransacaoFalhar() {
         doThrow(new RuntimeException("falha ao gravar transação")).when(transacaoRepository).save(any(Transacao.class));
 
-        assertThrows(RuntimeException.class, () -> contaBancariaService.depositar("RBX", new BigDecimal("100.00")));
+        assertThrows(RuntimeException.class, () -> contaBancariaService.depositar("000001", new BigDecimal("100.00")));
 
         var saldo = new TransactionTemplate(transactionManager).execute(status ->
-                contaRepo.findByNumero("RBX").orElseThrow().getSaldo()
+                contaRepo.findByNumero("000001").orElseThrow().getSaldo()
         );
         assertEquals(0, saldo.compareTo(new BigDecimal("500.00")));
     }
@@ -85,7 +85,7 @@ class ContaBancariaMovimentacaoConsistenciaIT {
                 .build();
         clienteRepo.save(coop2);
         var contaB = new ContaBancariaJpaEntity();
-        contaB.setNumero("RBY");
+        contaB.setNumero("000002");
         contaB.setDigitoVerificador("1");
         contaB.setSaldo(new BigDecimal("100.00"));
         contaB.setTitular(coop2);
@@ -99,12 +99,16 @@ class ContaBancariaMovimentacaoConsistenciaIT {
             return inv.getArgument(0);
         }).when(transacaoRepository).save(any(Transacao.class));
 
-        assertThrows(RuntimeException.class,
-                () -> contaBancariaService.transferir(new TransferenciaRequest("RBX", "RBY", new BigDecimal("50.00"))));
+        var req = new TransferenciaRequest("000001", "000002", new BigDecimal("50.00"));
+        assertThrows(RuntimeException.class, () -> contaBancariaService.transferir(req));
 
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            assertEquals(0, contaRepo.findByNumero("RBX").orElseThrow().getSaldo().compareTo(new BigDecimal("500.00")));
-            assertEquals(0, contaRepo.findByNumero("RBY").orElseThrow().getSaldo().compareTo(new BigDecimal("100.00")));
-        });
+        var saldoA = new TransactionTemplate(transactionManager).execute(status ->
+                contaRepo.findByNumero("000001").orElseThrow().getSaldo()
+        );
+        var saldoB = new TransactionTemplate(transactionManager).execute(status ->
+                contaRepo.findByNumero("000002").orElseThrow().getSaldo()
+        );
+        assertEquals(0, saldoA.compareTo(new BigDecimal("500.00")));
+        assertEquals(0, saldoB.compareTo(new BigDecimal("100.00")));
     }
 }
