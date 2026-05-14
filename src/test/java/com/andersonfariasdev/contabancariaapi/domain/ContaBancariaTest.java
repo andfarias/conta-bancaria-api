@@ -5,7 +5,7 @@ import com.andersonfariasdev.contabancariaapi.domain.model.Cliente;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoPessoa;
 import com.andersonfariasdev.contabancariaapi.domain.model.enums.TipoConta;
 import com.andersonfariasdev.contabancariaapi.domain.model.value.Documento;
-import com.andersonfariasdev.contabancariaapi.domain.model.value.NumeroConta;
+import com.andersonfariasdev.contabancariaapi.domain.model.value.IdentificadorConta;
 import com.andersonfariasdev.contabancariaapi.infrastructure.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,34 +25,26 @@ class ContaBancariaTest {
     }
 
     @Test
-    void construtorNumeroNulo() {
+    void construtorIdentificadorNulo() {
         assertThrows(ValidationException.class,
-                () -> new ContaBancaria(1L, null, "1", titular, TipoConta.CORRENTE));
-    }
-
-    @Test
-    void construtorDigitoObrigatorio() {
-        assertThrows(ValidationException.class,
-                () -> new ContaBancaria(1L, new NumeroConta("1"), null, titular, TipoConta.CORRENTE));
-        assertThrows(ValidationException.class,
-                () -> new ContaBancaria(1L, new NumeroConta("1"), "  ", titular, TipoConta.CORRENTE));
+                () -> new ContaBancaria(1L, null, titular, TipoConta.CORRENTE));
     }
 
     @Test
     void construtorTitularObrigatorio() {
         assertThrows(ValidationException.class,
-                () -> new ContaBancaria(1L, new NumeroConta("1"), "1", null, TipoConta.CORRENTE));
+                () -> new ContaBancaria(1L, new IdentificadorConta("123456", "1"), null, TipoConta.CORRENTE));
     }
 
     @Test
     void construtorTipoObrigatorio() {
         assertThrows(ValidationException.class,
-                () -> new ContaBancaria(1L, new NumeroConta("1"), "1", titular, null));
+                () -> new ContaBancaria(1L, new IdentificadorConta("123456", "1"), titular, null));
     }
 
     @Test
     void creditarValorInvalidoOuContaInativa() {
-        var conta = new ContaBancaria(1L, new NumeroConta("1"), "1", titular, TipoConta.CORRENTE);
+        var conta = new ContaBancaria(1L, new IdentificadorConta("123456", "1"), titular, TipoConta.CORRENTE);
         assertThrows(ValidationException.class, () -> conta.creditar(null));
         assertThrows(ValidationException.class, () -> conta.creditar(BigDecimal.ZERO));
         conta.bloquear();
@@ -61,7 +53,7 @@ class ContaBancariaTest {
 
     @Test
     void debitarSaldoInsuficienteOuContaInativa() {
-        var conta = new ContaBancaria(1L, new NumeroConta("1"), "1", titular, TipoConta.CORRENTE);
+        var conta = new ContaBancaria(1L, new IdentificadorConta("123456", "1"), titular, TipoConta.CORRENTE);
         assertThrows(ValidationException.class, () -> conta.debitar(new BigDecimal("0.01")));
         conta.creditar(new BigDecimal("50.00"));
         conta.debitar(new BigDecimal("25.00"));
@@ -71,7 +63,7 @@ class ContaBancariaTest {
 
     @Test
     void temSaldoSuficienteRespeitaPolitica() {
-        var conta = new ContaBancaria(1L, new NumeroConta("1"), "1", titular, TipoConta.CORRENTE);
+        var conta = new ContaBancaria(1L, new IdentificadorConta("123456", "1"), titular, TipoConta.CORRENTE);
         conta.creditar(new BigDecimal("100.00"));
         assertEquals(true, conta.temSaldoSuficiente(new BigDecimal("100.00")));
         assertEquals(false, conta.temSaldoSuficiente(new BigDecimal("100.01")));
